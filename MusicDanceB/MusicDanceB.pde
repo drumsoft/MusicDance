@@ -10,7 +10,10 @@
  */
  
 import SimpleOpenNI.*;
+import java.util.*;
+import java.util.Map.Entry;
 
+// processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
 
 SimpleOpenNI context;
 float        zoomF =0.5f;
@@ -41,6 +44,7 @@ void setup()
      exit();
      return;  
   }
+  initMusicDanceSystem();
 
   // disable mirror
   context.setMirror(false);
@@ -79,10 +83,13 @@ void draw()
   
   // draw the skeleton if its available
   int[] userList = context.getUsers();
+  float time = getTime();
   for(int i=0;i<userList.length;i++)
   {
-    if(context.isTrackingSkeleton(userList[i]))
+    if(context.isTrackingSkeleton(userList[i])) {
       drawSkeleton(userList[i]);
+      getBpmDetector(userList[i]).fetchPositionData(time);
+    }
     
     // draw the center of mass
     if(context.getCoM(userList[i],com))
@@ -232,21 +239,22 @@ void drawJointOrientation(int userId,int jointType,PVector pos,float length)
 void onNewUser(SimpleOpenNI curContext,int userId)
 {
   println("onNewUser - userId: " + userId);
-  println("\tstart tracking skeleton");
-  
   context.startTrackingSkeleton(userId);
+  
+  startBpmDetecting(userId);
 }
 
 void onLostUser(SimpleOpenNI curContext,int userId)
 {
   println("onLostUser - userId: " + userId);
+  
+  stopBpmDetecting(userId);
 }
 
 void onVisibleUser(SimpleOpenNI curContext,int userId)
 {
   //println("onVisibleUser - userId: " + userId);
 }
-
 
 // -----------------------------------------------------------------
 // Keyboard events
@@ -315,3 +323,40 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
   dir.set(up.cross(left));
   dir.normalize();
 }
+
+// -----------------------------------------
+
+HashMap<Integer, BPMDetector> bpmDetectors;
+long systemStarted;
+
+float getTime() {
+  return (float)(System.currentTimeMillis() - systemStarted) / 1000;
+}
+
+void initMusicDanceSystem() {
+  bpmDetectors = new HashMap<Integer, BPMDetector>();
+  systemStarted = System.currentTimeMillis();
+}
+
+void startBpmDetecting(int userId) {
+  bpmDetectors.put(new Integer(userId), new BPMDetector(userId, context, this, getTime()));
+}
+
+BPMDetector getBpmDetector(int userId) {
+  return bpmDetectors.get(new Integer(userId));
+}
+
+void stopBpmDetecting(int userId) {
+  bpmDetectors.remove(new Integer(userId));
+}
+
+// タップのコールバック
+void tapped(int userId, BPMDetector detector) {
+  println("ID: " + userId + ",  Beats: " + Math.round(60/detector.getBeats()) + ",  Power: " + Math.round(detector.getPower()));
+  // プライマリダンサーかどうか調べる
+  // プライマリダンサーでない場合は無視する
+  // プライマリダンサーによるタップの場合、プレイヤーにタップを送る
+}
+
+
+

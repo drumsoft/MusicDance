@@ -15,6 +15,15 @@
   * アッチュ
   * 渡部高士
 
+## TODO
+
+* BeatDetector - ビートの検出器
+* SongPlayer - 音楽データの再生
+* MoveDetector (体の動きの大きさなどの検出)
+  * BodyMoveDetector - 上半身の動き
+  * GroovyMoveDetector - 体のひねり
+  * HandsUpMoveDetector - ハンズアップ
+
 ## 環境
 
 * Processing
