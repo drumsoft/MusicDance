@@ -33,6 +33,7 @@ color[]       userClr = new color[]{ color(255,0,0),
                                      color(255,0,255),
                                      color(0,255,255)
                                    };
+color        whiteColor = color(255,255,255);
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
 
@@ -159,6 +160,7 @@ void drawPointCloud(int [] depthMap, int [] userMap) {
   int     steps   = 10;  // to speed up the drawing, draw every third point
   int     index;
   PVector realWorldPoint;
+  float currentTime = getTime();
   
   // draw the pointcloud
   pushMatrix();
@@ -172,10 +174,11 @@ void drawPointCloud(int [] depthMap, int [] userMap) {
       { 
         // draw the projected point
         realWorldPoint = context.depthMapRealWorld()[index];
-        if(userMap[index] == 0)
+        if(userMap[index] == 0) {
           fill(100); 
-        else
-          fill(userClr[ (userMap[index] - 1) % userClr.length ]);
+        } else {
+          fill(getBpmDetector(userMap[index]).getUserColor());
+        }
         
         pushMatrix();
         translate(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);
@@ -390,6 +393,7 @@ void initMusicDanceSystem() {
 void startBpmDetecting(int userId) {
   BPMDetector bpmDetector = new BPMDetector(userId, context, this, getTime());
   bpmDetector.setY(uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+  bpmDetector.setUserColor(userClr[ (userId - 1) % userClr.length ]);
   bpmDetectors.put(new Integer(userId), bpmDetector);
 }
 

@@ -204,5 +204,25 @@ println("");
       }
     }
     popMatrix();
+    updateUserColor(getTime());
+  }
+  
+  color originalUserColor, currentUserColor;
+  
+  void setUserColor(color c) {
+    originalUserColor = c;
+  }
+  
+  void updateUserColor(float currentTime) {
+    float elapsedTime = currentTime - previousBeatTime;
+    if (elapsedTime < 0.4) {
+      currentUserColor = lerpColor(whiteColor, originalUserColor, elapsedTime / 0.4);
+    } else {
+      currentUserColor = originalUserColor;
+    }
+  }
+  
+  color getUserColor() {
+    return currentUserColor;
   }
 }
