@@ -17,8 +17,8 @@
 
 ## TODO
 
-* BeatDetector - ビートの検出器
-* SongPlayer - 音楽データの再生
+* BeatDetector - ビートの検出器 - 検出がまだまだ
+* SongPlayer - 音楽データの再生 - ビートに合わせる部分ができた
 * MoveDetector (体の動きの大きさなどの検出)
   * BodyMoveDetector - 上半身の動き
   * GroovyMoveDetector - 体のひねり
