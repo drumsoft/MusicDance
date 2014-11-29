@@ -14,8 +14,8 @@ class BPMDetector {
     SimpleOpenNI.SKEL_RIGHT_KNEE
     //SimpleOpenNI.SKEL_RIGHT_FOOT
   };
-  float th_SPB_variant_max = 1.2; // これ以上に早くなる場合は無視する
-  float th_SPB_variant_min = 0.8; // これ以下に遅くなる場合は無視する
+  float th_SPB_variant_max = 1.3; // これ以上に早くなる場合は無視する
+  float th_SPB_variant_min = 0.7; // これ以下に遅くなる場合は無視する
   
   SimpleOpenNI context;
   MusicDanceB controller;
@@ -27,7 +27,7 @@ class BPMDetector {
   LinkedList<Float>[] tap_queue; // 部位ごとの配列: タップ時刻の履歴 [前回, 前々回, ..]
   float[] tap_previous_time; // 部位ごとの前回タップされた時刻
   float[] tap_power; // 部位ごとのタップされた強度
-  float result_secondsPerBeat; // 現在検出しているビート(秒/ビート)
+  float result_secondsPerBeat = 0.5; // 現在検出しているビート(秒/ビート)
   float result_power; // 現在のパワー
   
   BPMDetector(int uid, SimpleOpenNI c, MusicDanceB a_controller, float time) {
@@ -87,19 +87,19 @@ class BPMDetector {
   void updateBeats(int updatedIndex, float time) {
     float powerMax = 0;
     int i, index = 0;
-print("updateBeats: ");
-for (i = 0; i < tap_power.length; i++) {
-  print("  " + Float.toString(tap_power[i]));
-}
-println("");
+//print("updateBeats: ");
+//for (i = 0; i < tap_power.length; i++) {
+  //print("  " + Float.toString(tap_power[i]));
+//}
+//println("");
     // 最もタップパワーの大きい部位を検索
     for (i = 0; i < pointsToReadBPM.length; i++) {
-ListIterator<Float> _itr = tap_queue[index].listIterator(0);
-print("   Tapped: " + i);
-while (_itr.hasNext()) {
-  print("  " + Float.toString(_itr.next().floatValue()));
-}
-println("");
+//ListIterator<Float> _itr = tap_queue[index].listIterator(0);
+//print("   Tapped: " + i);
+//while (_itr.hasNext()) {
+  //print("  " + Float.toString(_itr.next().floatValue()));
+//}
+//println("");
       if (powerMax <= tap_power[i]) {
         result_power = powerMax = tap_power[i];
         index = i;
@@ -116,14 +116,15 @@ println("");
       while (itr.hasNext()) {
         // 現在のビートから変化量が極端なタップは無視して集計を行う
         float tap_SPB = itr.next().floatValue();
-        float SPBvariant = tap_SPB / result_secondsPerBeat;
+        float SPBvariant = tap_SPB / (60 / sound.getBPM());
         if (th_SPB_variant_max >= SPBvariant && SPBvariant >= th_SPB_variant_min) {
           sumSeconds += tap_SPB;
           summedSecondsNumber++;
         }
       }
       if (summedSecondsNumber > 0) {
-        result_secondsPerBeat = sumSeconds / summedSecondsNumber;
+        println("sec " + sumSeconds + " sum " + summedSecondsNumber);
+        result_secondsPerBeat = sumSeconds / (float)summedSecondsNumber;
       }
       previousBeatTime = time;
       controller.tapped(userId, this);

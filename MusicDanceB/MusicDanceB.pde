@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 // processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
 
 SimpleOpenNI context;
+SoundPlayer sound;
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
                                    // the data from openni comes upside down
@@ -70,6 +71,9 @@ void setup()
   uiDisplayWidth  =  (float)width  * 0.36;
   uiDisplayHeight =  (float)height * 0.36;
   uiDisplayZ = 1;
+  
+  sound = new SoundPlayer();
+  sound.start();
 }
 
 void drawDepthImageMap() {
@@ -407,10 +411,12 @@ void stopBpmDetecting(int userId) {
 
 // タップのコールバック
 void tapped(int userId, BPMDetector detector) {
-  println("ID: " + userId + ",  Beats: " + Math.round(60/detector.getBeats()) + ",  Power: " + Math.round(detector.getPower()));
+  //println("ID: " + userId + ",  Beats: " + Math.round(60/detector.getBeats()) + ",  Power: " + Math.round(detector.getPower()));
   // プライマリダンサーかどうか調べる
   // プライマリダンサーでない場合は無視する
-  // プライマリダンサーによるタップの場合、プレイヤーにタップを送る
+  // プライマリダンサーによるタップの場合、サウンドプレイヤーにタップを送る
+  
+  sound.tapBeat((float)60 / detector.getBeats());
 }
 
 
