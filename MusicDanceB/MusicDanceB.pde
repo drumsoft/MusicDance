@@ -34,6 +34,8 @@ color[]       userClr = new color[]{ color(255,0,0),
                                      color(0,255,255)
                                    };
 
+float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
+
 void setup()
 {
   size(1024,768,P3D);  // strange, get drawing error in the cameraFrustum if i use P3D, in opengl there is no problem
@@ -47,27 +49,43 @@ void setup()
   initMusicDanceSystem();
 
   // disable mirror
-  context.setMirror(false);
+  context.setMirror(true);
 
-  // enable depthMap generation 
+  // enable depthMap generation
+  //context.enableIR();
   context.enableDepth();
 
   // enable skeleton generation for all joints
   context.enableUser();
 
   stroke(255,255,255);
-  smooth();  
+  smooth();
   perspective(radians(45),
               float(width)/float(height),
               10,150000);
- }
+
+  uiDisplayLeft   = -(float)width  * 0.18;
+  uiDisplayTop    = -(float)height * 0.18;
+  uiDisplayWidth  =  (float)width  * 0.36;
+  uiDisplayHeight =  (float)height * 0.36;
+  uiDisplayZ = 1;
+}
+
+void drawDepthImageMap() {
+  pushMatrix();
+  scale((float)1024/640);
+  image(context.depthImage(),0,0);
+  popMatrix();
+}
 
 void draw()
 {
+  updateTime();
   // update the cam
   context.update();
-
+  
   background(0,0,0);
+  //drawDepthImageMap();
   
   // set the scene pos
   translate(width/2, height/2, 0);
@@ -79,16 +97,17 @@ void draw()
  
   translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
   
-  //drawPointCloud(context.depthMap(), userMap);
+  drawPointCloud(context.depthMap(), userMap);
   
   // draw the skeleton if its available
   int[] userList = context.getUsers();
-  float time = getTime();
   for(int i=0;i<userList.length;i++)
   {
     if(context.isTrackingSkeleton(userList[i])) {
       drawSkeleton(userList[i]);
-      getBpmDetector(userList[i]).fetchPositionData(time);
+      BPMDetector bpmDetector = getBpmDetector(userList[i]);
+      bpmDetector.fetchPositionData(getTime());
+      bpmDetector.drawSpeed();
     }
     
     // draw the center of mass
@@ -116,13 +135,34 @@ void draw()
   //context.drawCamFrustum();
 }
 
+// 軸は X(右) Y(上) Z(奥) が正方向, Z軸座標未指定時は z=1 の面に描画
+// この時 x, y, は [-width * 0.18, width * 0.18] に
+void drawDisplayTests() {
+  stroke(255, 255, 0);
+  strokeWeight(7);
+  float zoom = 0.18;
+  float l = -(float)width * zoom, r = (float)width * zoom, 
+        t = -(float)height * zoom, b = (float)height * zoom, z = 1;
+  line(l, t, z, r, t, z);
+  line(r, t, z, r, b, z);
+  line(r, b, z, l, b, z);
+  line(l, b, z, l, t, z);
+  strokeWeight(3);
+  stroke(0, 255, 0);
+  line(l, t, r, t);
+  line(r, t, r, b);
+  line(r, b, l, b);
+  line(l, b, l, t);
+}
+
 void drawPointCloud(int [] depthMap, int [] userMap) {
-  int     steps   = 3;  // to speed up the drawing, draw every third point
+  int     steps   = 10;  // to speed up the drawing, draw every third point
   int     index;
   PVector realWorldPoint;
   
   // draw the pointcloud
-  beginShape(POINTS);
+  pushMatrix();
+  noStroke();
   for(int y=0;y < context.depthHeight();y+=steps)
   {
     for(int x=0;x < context.depthWidth();x+=steps)
@@ -133,15 +173,18 @@ void drawPointCloud(int [] depthMap, int [] userMap) {
         // draw the projected point
         realWorldPoint = context.depthMapRealWorld()[index];
         if(userMap[index] == 0)
-          stroke(100); 
+          fill(100); 
         else
-          stroke(userClr[ (userMap[index] - 1) % userClr.length ]);
+          fill(userClr[ (userMap[index] - 1) % userClr.length ]);
         
-        point(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);
+        pushMatrix();
+        translate(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);
+        ellipse(0, 0, 10, 10);
+        popMatrix();
       }
     } 
   } 
-  endShape();
+  popMatrix();
 }
 
 // draw the skeleton with the selected joints
@@ -327,19 +370,27 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 // -----------------------------------------
 
 HashMap<Integer, BPMDetector> bpmDetectors;
-long systemStarted;
+long systemStartedTime;
+float systemCurrentTime;
+
+void updateTime() {
+  systemCurrentTime = (float)(System.currentTimeMillis() - systemStartedTime) / 1000;
+}
 
 float getTime() {
-  return (float)(System.currentTimeMillis() - systemStarted) / 1000;
+  return systemCurrentTime;
 }
 
 void initMusicDanceSystem() {
   bpmDetectors = new HashMap<Integer, BPMDetector>();
-  systemStarted = System.currentTimeMillis();
+  systemStartedTime = System.currentTimeMillis();
+  updateTime();
 }
 
 void startBpmDetecting(int userId) {
-  bpmDetectors.put(new Integer(userId), new BPMDetector(userId, context, this, getTime()));
+  BPMDetector bpmDetector = new BPMDetector(userId, context, this, getTime());
+  bpmDetector.setY(uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+  bpmDetectors.put(new Integer(userId), bpmDetector);
 }
 
 BPMDetector getBpmDetector(int userId) {

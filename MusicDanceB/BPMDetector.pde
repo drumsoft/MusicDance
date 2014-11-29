@@ -5,7 +5,7 @@ import java.util.ListIterator;
 class BPMDetector {
   int tap_queue_length = 16; // 貯めるタップ回数
   float th_confidence = 0.3; // 入力値を採用する最小の confidence
-  float th_speed_lowest = 100; // 動きとして判断する最小のピクセル数/秒
+  float th_speed_lowest = 300; // 動きとして判断する最小のピクセル数/秒
   int[] pointsToReadBPM = { // BPMの読み込みに使うSkelton上のポイント設定
     SimpleOpenNI.SKEL_LEFT_HIP, 
     SimpleOpenNI.SKEL_LEFT_KNEE,
@@ -23,11 +23,11 @@ class BPMDetector {
   float[] pointsPreviousSpeed; // 各点の速度(前回のを保存)
   float[] pointsPreviousPosition; // 各点の位置(前回のを保存)
   float[] previousTime; // 前回の判定時刻
+  float previousBeatTime; // 前回ビートとして判定した時刻
   LinkedList<Float>[] tap_queue; // 部位ごとの配列: タップ時刻の履歴 [前回, 前々回, ..]
   float[] tap_previous_time; // 部位ごとの前回タップされた時刻
   float[] tap_power; // 部位ごとのタップされた強度
   float result_secondsPerBeat; // 現在検出しているビート(秒/ビート)
-  float summed_power; // これまでのパワー積算
   float result_power; // 現在のパワー
   
   BPMDetector(int uid, SimpleOpenNI c, MusicDanceB a_controller, float time) {
@@ -125,9 +125,12 @@ println("");
       if (summedSecondsNumber > 0) {
         result_secondsPerBeat = sumSeconds / summedSecondsNumber;
       }
+      previousBeatTime = time;
       controller.tapped(userId, this);
     }
   }
+  
+  // -----------------------------------------------------
   
   // ビート(secondsPerBeat)を取得
   float getBeats() {
@@ -137,5 +140,69 @@ println("");
   // パワーを取得
   float getPower() {
     return result_power;
+  }
+  
+  // 現在の速度リストを取得
+  float[] getSpeedList() {
+    return pointsPreviousSpeed;
+  }
+  
+  // 前回のビート検出時間を返す
+  float getPreviousBeatTime() {
+    return previousBeatTime;
+  }
+  
+  // -----------------------------------------------------
+  
+  float base_y;
+  int color_b;
+  LinkedList<Float>[] yList; // 部位ごとの速度の配列
+  
+  void setY(float y) {
+    base_y = y;
+    color_b = (int)Math.min(Math.abs(y), 255);
+    yList = new LinkedList[pointsToReadBPM.length];
+    for (int i = 0; i < pointsToReadBPM.length; i++) {
+      yList[i] = new LinkedList<Float>();
+    }
+  }
+  
+  void drawSpeed() {
+    float y_zoom = 20 / th_speed_lowest;
+    pushMatrix();
+    stroke(255, 255, 255);
+    line(uiDisplayLeft, base_y, 0, uiDisplayLeft+uiDisplayWidth, base_y, 0);
+    stroke(200, 200, 200);
+    float th_y =  th_speed_lowest * y_zoom + base_y;
+    line(uiDisplayLeft,  th_y, 0, uiDisplayLeft+uiDisplayWidth,  th_y, 0);
+          th_y = -th_speed_lowest * y_zoom + base_y;
+    line(uiDisplayLeft,  th_y, 0, uiDisplayLeft+uiDisplayWidth,  th_y, 0);
+    
+    for (int i = 0; i < yList.length; i++) {
+      yList[i].addFirst(
+        Math.min(2*th_speed_lowest, Math.max(-2*th_speed_lowest, pointsPreviousSpeed[i]))
+        * y_zoom + base_y);
+      while (yList[i].size() > 90) {
+        yList[i].removeLast();
+      }
+      
+      int color_r = Math.min(255, (int)(tap_power[i] / 4.0) + 100);
+      stroke(color_r, 255, color_b);
+      
+      float px = width, py = yList[i].getFirst();
+      int number, xIndex;
+      number = xIndex = yList[i].size() - 1;
+      if (number > 0) {
+        ListIterator<Float> itr = yList[i].listIterator(0);
+        while (itr.hasNext()) {
+          float x = uiDisplayLeft + (uiDisplayWidth * xIndex / number);
+          float y = itr.next().intValue();
+          line(px,py,0, x,y,0);
+          px = x; py = y;
+          xIndex--;
+        }
+      }
+    }
+    popMatrix();
   }
 }
