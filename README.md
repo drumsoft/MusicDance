@@ -1,5 +1,7 @@
 # ミュージックダンス（仮）
 
+## 概要(SMUA資料より)
+
 * チーム名
   * 日本パーティー党
 * 概要
@@ -12,4 +14,9 @@
   * 岩坂丈洋
   * アッチュ
   * 渡部高士
+
+## 環境
+
+* Processing
+* SimpleOpenNI (Processing Sketch -> Import Library -> Add Library で追加)
 
