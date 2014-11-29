@@ -71,15 +71,11 @@ void draw()
   rotateY(rotY);
   scale(zoomF);
   
-  int[]   depthMap = context.depthMap();
   int[]   userMap = context.userMap();
-  int     steps   = 3;  // to speed up the drawing, draw every third point
-  int     index;
-  PVector realWorldPoint;
  
   translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
   
-  //drawPointCloud();
+  //drawPointCloud(context.depthMap(), userMap);
   
   // draw the skeleton if its available
   int[] userList = context.getUsers();
@@ -113,7 +109,11 @@ void draw()
   //context.drawCamFrustum();
 }
 
-void drawPointCloud() {
+void drawPointCloud(int [] depthMap, int [] userMap) {
+  int     steps   = 3;  // to speed up the drawing, draw every third point
+  int     index;
+  PVector realWorldPoint;
+  
   // draw the pointcloud
   beginShape(POINTS);
   for(int y=0;y < context.depthHeight();y+=steps)
