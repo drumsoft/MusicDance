@@ -1,14 +1,6 @@
-/* --------------------------------------------------------------------------
- * SimpleOpenNI User3d Test
- * --------------------------------------------------------------------------
- * Processing Wrapper for the OpenNI/Kinect 2 library
- * http://code.google.com/p/simple-openni
- * --------------------------------------------------------------------------
- * prog:  Max Rheiner / Interaction Design / Zhdk / http://iad.zhdk.ch/
- * date:  12/12/2012 (m/d/y)
- * ----------------------------------------------------------------------------
- */
- 
+// Music Dance (Japan Party Party)
+// based on SimpleOpenNI User3d Test http://code.google.com/p/simple-openni by Max Rheiner / Interaction Design / Zhdk / http://iad.zhdk.ch/ 12/12/2012
+
 import SimpleOpenNI.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -104,6 +96,8 @@ void draw()
   
   drawPointCloud(context.depthMap(), userMap);
   
+  float movingScore = 0, handsUpScore = 0;
+  
   // draw the skeleton if its available
   int[] userList = context.getUsers();
   for(int i=0;i<userList.length;i++)
@@ -113,9 +107,20 @@ void draw()
       BPMDetector bpmDetector = getBpmDetector(userList[i]);
       bpmDetector.fetchPositionData(getTime());
       bpmDetector.drawSpeed();
+      HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
+      hmDetector.update();
+      BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
+      bmDetector.updateWithTime(getTime());
+      
+      movingScore  += bmDetector.getValue();
+      float handsUp = hmDetector.getValue();
+      if (handsUp > 0) {
+        handsUpScore += handsUp;
+      }
     }
     
     // draw the center of mass
+    /*
     if(context.getCoM(userList[i],com))
     {
       stroke(100,255,0);
@@ -131,11 +136,25 @@ void draw()
         vertex(com.x,com.y,com.z + 15);
       endShape();
       
-      fill(0,255,100);
-      text(Integer.toString(userList[i]),com.x,com.y,com.z);
-    }      
-  }    
- 
+      if (context.isTrackingSkeleton(userList[i])) {
+        pushMatrix();
+        // text(Integer.toString(userList[i]),com.x,com.y,com.z);
+        translate(com.x, com.y, com.z);
+        rotateX(rotX);
+        textSize(96);
+        fill(0,255,100);
+        text(Integer.toString( (int)(getBodyMoveDetector(userList[i]).getValue()) ), 0, 40, 0);
+        fill(0,255,255);
+        text(Integer.toString( (int)(100.0 * getHandsUpMoveDetector(userList[i]).getValue()) ), 0, -20, 0);
+        popMatrix();
+      }
+    }
+    */
+  }
+  
+  if (movingScore  > 0)  sound.setMoving(movingScore);
+  if (handsUpScore > 0) sound.setHandsUp(handsUpScore);
+
   // draw the kinect cam
   //context.drawCamFrustum();
 }
@@ -178,15 +197,20 @@ void drawPointCloud(int [] depthMap, int [] userMap) {
       { 
         // draw the projected point
         realWorldPoint = context.depthMapRealWorld()[index];
+        float radiusPlus;
         if(userMap[index] == 0) {
-          fill(100); 
+          fill(100);
+          radiusPlus = 0;
         } else {
-          fill(getBpmDetector(userMap[index]).getUserColor());
+          BPMDetector bpmd = getBpmDetector(userMap[index]);
+          fill(bpmd.getUserColor());
+          realWorldPoint = bpmd.movePoint(realWorldPoint);
+          radiusPlus = Math.max(Math.min(20, (getBodyMoveDetector(userMap[index]).getValue()-100) / 10), 0);
         }
         
         pushMatrix();
         translate(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);
-        ellipse(0, 0, 10, 10);
+        ellipse(0, 0, 10+radiusPlus, 10+radiusPlus);
         popMatrix();
       }
     } 
@@ -376,7 +400,10 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 
 // -----------------------------------------
 
+int [][] armsDetectionParts;
 HashMap<Integer, BPMDetector> bpmDetectors;
+HashMap<Integer, HandsUpMoveDetector> handsUpDetectors;
+HashMap<Integer, BodyMoveDetector> bodyMoveDetectors;
 long systemStartedTime;
 float systemCurrentTime;
 
@@ -389,7 +416,19 @@ float getTime() {
 }
 
 void initMusicDanceSystem() {
+  armsDetectionParts = new int[4][2];
+  armsDetectionParts[0][0] = SimpleOpenNI.SKEL_LEFT_SHOULDER;
+  armsDetectionParts[0][1] = SimpleOpenNI.SKEL_LEFT_ELBOW;
+  armsDetectionParts[1][0] = SimpleOpenNI.SKEL_LEFT_ELBOW;
+  armsDetectionParts[1][1] = SimpleOpenNI.SKEL_LEFT_HAND;
+  armsDetectionParts[2][0] = SimpleOpenNI.SKEL_RIGHT_SHOULDER;
+  armsDetectionParts[2][1] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
+  armsDetectionParts[3][0] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
+  armsDetectionParts[3][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
+  
   bpmDetectors = new HashMap<Integer, BPMDetector>();
+  handsUpDetectors = new HashMap<Integer, HandsUpMoveDetector>();
+  bodyMoveDetectors = new HashMap<Integer, BodyMoveDetector>();
   systemStartedTime = System.currentTimeMillis();
   updateTime();
 }
@@ -399,14 +438,32 @@ void startBpmDetecting(int userId) {
   bpmDetector.setY(uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
   bpmDetector.setUserColor(userClr[ (userId - 1) % userClr.length ]);
   bpmDetectors.put(new Integer(userId), bpmDetector);
+  
+  HandsUpMoveDetector hmDetector = new HandsUpMoveDetector(userId, context, this);
+  hmDetector.setMoveParts(armsDetectionParts);
+  handsUpDetectors.put(new Integer(userId), hmDetector);
+  
+  BodyMoveDetector bmDetector = new BodyMoveDetector(userId, context, this, getTime());
+  bmDetector.setMoveParts(armsDetectionParts);
+  bodyMoveDetectors.put(new Integer(userId), bmDetector);
 }
 
 BPMDetector getBpmDetector(int userId) {
   return bpmDetectors.get(new Integer(userId));
 }
 
+HandsUpMoveDetector getHandsUpMoveDetector(int userId) {
+  return handsUpDetectors.get(new Integer(userId));
+}
+
+BodyMoveDetector getBodyMoveDetector(int userId) {
+  return bodyMoveDetectors.get(new Integer(userId));
+}
+
 void stopBpmDetecting(int userId) {
   bpmDetectors.remove(new Integer(userId));
+  handsUpDetectors.remove(new Integer(userId));
+  bodyMoveDetectors.remove(new Integer(userId));
 }
 
 // タップのコールバック

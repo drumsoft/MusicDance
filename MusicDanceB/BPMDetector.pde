@@ -123,7 +123,6 @@ class BPMDetector {
         }
       }
       if (summedSecondsNumber > 0) {
-        println("sec " + sumSeconds + " sum " + summedSecondsNumber);
         result_secondsPerBeat = sumSeconds / (float)summedSecondsNumber;
       }
       previousBeatTime = time;
@@ -155,7 +154,7 @@ class BPMDetector {
   
   // -----------------------------------------------------
   
-  float base_y;
+  float base_y, pointsZoom;
   int color_b;
   LinkedList<Float>[] yList; // 部位ごとの速度の配列
   
@@ -166,6 +165,7 @@ class BPMDetector {
     for (int i = 0; i < pointsToReadBPM.length; i++) {
       yList[i] = new LinkedList<Float>();
     }
+    centerVector = new PVector();
   }
   
   void drawSpeed() {
@@ -206,9 +206,11 @@ class BPMDetector {
     }
     popMatrix();
     updateUserColor(getTime());
+    context.getCoM(userId, centerVector);
   }
   
   color originalUserColor, currentUserColor;
+  PVector centerVector;
   
   void setUserColor(color c) {
     originalUserColor = c;
@@ -216,7 +218,8 @@ class BPMDetector {
   
   void updateUserColor(float currentTime) {
     float elapsedTime = currentTime - previousBeatTime;
-    if (elapsedTime < 0.4) {
+    pointsZoom = 0.1 - elapsedTime;
+    if (elapsedTime < 0.1) {
       currentUserColor = lerpColor(whiteColor, originalUserColor, elapsedTime / 0.4);
     } else {
       currentUserColor = originalUserColor;
@@ -226,4 +229,18 @@ class BPMDetector {
   color getUserColor() {
     return currentUserColor;
   }
+  
+  PVector movePoint(PVector in) {
+    if (pointsZoom > 0) {
+      float zoom = pointsZoom + 1.0;
+      return new PVector(
+        zoom * (in.x - centerVector.x) + centerVector.x,
+        zoom * (in.y - centerVector.y) + centerVector.y,
+        zoom * (in.z - centerVector.z) + centerVector.z
+      );
+    } else {
+      return in;
+    }
+  }
+
 }
