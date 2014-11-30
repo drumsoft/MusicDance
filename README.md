@@ -17,15 +17,15 @@
 
 ## TODO
 
-* BeatDetector - ビートの検出器 - 検出がまだまだ
-* SoundPlayer - 音楽データの再生 - ビートに合わせる部分ができた
+* BeatDetector - ビートの検出器 - 膝の上下でなく、曲げる動き等を試したい。
+* SoundPlayer - 音楽データの再生 - 曲を変える条件は再考の余地が。エフェクト等も入れたい。
 * MoveDetector (体の動きの大きさなどの検出)
-  * BodyMoveDetector - 上半身の動き
-  * GroovyMoveDetector - 体のひねり
-  * HandsUpMoveDetector - ハンズアップ
+  * BodyMoveDetector - 上半身の動き - できた
+  * GroovyMoveDetector - 体のひねり - 未実装
+  * HandsUpMoveDetector - ハンズアップ - できた
 
 ## 環境
 
 * Processing
-* SimpleOpenNI (Processing Sketch -> Import Library -> Add Library で追加)
-
+* SimpleOpenNI (Processing の機能で追加)
+* beads (Processing の機能で追加)
