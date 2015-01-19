@@ -13,6 +13,20 @@
   * アッチュ
   * 渡部高士
 
+## インストール
+
+* Kinect をPCに繋げる
+* このリポジトリをダウンロード or クローンする
+* Processing をインストールして起動し、設定を行う
+  * Sketch -> Import Library -> Add Library から以下を追加する
+    * SimpleOpenNI
+    * Beads
+
+## 実行
+
+* リポジトリ内の MusicDanceB.pde を Processing で開く
+* Run (Sketch -> Run) で実行する
+
 ## TODO
 
 * BeatDetector - ビートの検出器 - 膝の上下でなく、曲げる動き等を試したい。
@@ -22,8 +36,3 @@
   * GroovyMoveDetector - 体のひねり - 未実装
   * HandsUpMoveDetector - ハンズアップ - できた
 
-## 環境
-
-* Processing
-* SimpleOpenNI (Processing の機能で追加)
-* beads (Processing の機能で追加)
