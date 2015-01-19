@@ -14,8 +14,8 @@ class BPMDetector {
     SimpleOpenNI.SKEL_RIGHT_KNEE
     //SimpleOpenNI.SKEL_RIGHT_FOOT
   };
-  float th_SPB_variant_max = 1.3; // これ以上に早くなる場合は無視する
-  float th_SPB_variant_min = 0.7; // これ以下に遅くなる場合は無視する
+  float th_SPB_variant_max = 1.2; // これ以上に早くなる場合は無視する
+  float th_SPB_variant_min = 0.833; // これ以下に遅くなる場合は無視する
   
   SimpleOpenNI context;
   MusicDanceB controller;

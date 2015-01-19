@@ -7,7 +7,7 @@ class SoundPlayer extends Bead {
   float bpmCapacityMin = 80;
   double originalLength = 15.610;
   double positionOffsetToFirstBeat = 0; // 最初のビート位置へのオフセット
-  float bpmAdjustingForBeatSlip = 5; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
+  float bpmAdjustingForBeatSlip = 0; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
   float currentBPM;
   float previousTapEvent;
   String[] soundFiles = { // サウンドファイルの一覧
