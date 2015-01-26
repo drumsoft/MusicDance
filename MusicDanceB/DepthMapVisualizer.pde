@@ -27,9 +27,18 @@ class DepthMapVisualizer {
             radiusPlus = 0;
           } else {
             BPMDetector bpmd = main.getBpmDetector(userMap[index]);
-            fill(bpmd.getUserColor());
-            realWorldPoint = bpmd.movePoint(realWorldPoint);
-            radiusPlus = Math.max(Math.min(20, (main.getBodyMoveDetector(userMap[index]).getValue()-100) / 10), 0);
+            if (bpmd != null) {
+              fill(bpmd.getUserColor());
+              realWorldPoint = bpmd.movePoint(realWorldPoint);
+            } else {
+              fill(userClr[userMap[index] % userClr.length]);
+            }
+            BodyMoveDetector bmd = main.getBodyMoveDetector(userMap[index]);
+            if (bmd != null) {
+              radiusPlus = Math.max(Math.min(20, (bmd.getValue()-100) / 10), 0);
+            } else {
+              radiusPlus = 10;
+            }
           }
           pushMatrix();
           translate(realWorldPoint.x, realWorldPoint.y, realWorldPoint.z);
