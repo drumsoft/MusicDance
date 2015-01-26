@@ -48,6 +48,7 @@ void setup()
   }
   
   depthMapStore = new DepthMapStore(depthMapSaveTo);
+  depthMapStore.load();
 
   initMusicDanceSystem();
 
@@ -74,7 +75,7 @@ void setup()
   uiDisplayZ = 1;
   
   for (int i = 0; i < depthMapVisualizer.length; i++) {
-    depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
+    depthMapVisualizer[i].initilize(this, depthMapStore.depthWidth(), depthMapStore.depthHeight());
   }
   
   sound = new SoundPlayer();
@@ -105,9 +106,9 @@ void draw()
   
   translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
   
-  int[] depthMap = context.depthMap();
-  PVector[] depthMapReal = context.depthMapRealWorld();
-  int[] userMap = context.userMap();
+  int[] depthMap = depthMapStore.depthMap();
+  PVector[] depthMapReal = depthMapStore.depthMapRealWorld();
+  int[] userMap = depthMapStore.userMap();
   depthMapVisualizer[0].draw(depthMap, depthMapReal, userMap);
   
   float movingScore = 0, handsUpScore = 0;
