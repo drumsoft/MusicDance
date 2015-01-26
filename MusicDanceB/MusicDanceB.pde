@@ -13,20 +13,21 @@ float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
                                    // the data from openni comes upside down
 float        rotY = radians(0);
-boolean      autoCalib=true;
 
 PVector      bodyCenter = new PVector();
 PVector      bodyDir = new PVector();
-PVector      com = new PVector();                                   
-PVector      com2d = new PVector();                                   
-color[]       userClr = new color[]{ color(255,0,0),
-                                     color(0,255,0),
-                                     color(0,0,255),
-                                     color(255,255,0),
-                                     color(255,0,255),
-                                     color(0,255,255)
-                                   };
-color        whiteColor = color(255,255,255);
+PVector      com = new PVector();
+color[]     userClr = new color[]{ color(255,0,0),
+                                   color(0,255,0),
+                                   color(0,0,255),
+                                   color(255,255,0),
+                                   color(255,0,255),
+                                   color(0,255,255)
+                                 };
+
+DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
+  new DepthMapVisualizer()
+};
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
 
@@ -64,6 +65,10 @@ void setup()
   uiDisplayHeight =  (float)height * 0.36;
   uiDisplayZ = 1;
   
+  for (int i = 0; i < depthMapVisualizer.length; i++) {
+    depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
+  }
+  
   sound = new SoundPlayer();
   sound.start();
 }
@@ -73,6 +78,9 @@ void drawDepthImageMap() {
   scale((float)1024/640);
   image(context.depthImage(),0,0);
   popMatrix();
+}
+
+void saveDepthMaps() {
 }
 
 void draw()
@@ -90,11 +98,12 @@ void draw()
   rotateY(rotY);
   scale(zoomF);
   
-  int[]   userMap = context.userMap();
- 
   translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
   
-  drawPointCloud(context.depthMap(), userMap);
+  int[] depthMap = context.depthMap();
+  PVector[] depthMapReal = context.depthMapRealWorld();
+  int[] userMap = context.userMap();
+  depthMapVisualizer[0].draw(depthMap, depthMapReal, userMap);
   
   float movingScore = 0, handsUpScore = 0;
   
@@ -177,45 +186,6 @@ void drawDisplayTests() {
   line(r, t, r, b);
   line(r, b, l, b);
   line(l, b, l, t);
-}
-
-void drawPointCloud(int [] depthMap, int [] userMap) {
-  int     steps   = 10;  // to speed up the drawing, draw every third point
-  int     index;
-  PVector realWorldPoint;
-  float currentTime = getTime();
-  
-  // draw the pointcloud
-  pushMatrix();
-  noStroke();
-  for(int y=0;y < context.depthHeight();y+=steps)
-  {
-    for(int x=0;x < context.depthWidth();x+=steps)
-    {
-      index = x + y * context.depthWidth();
-      if(depthMap[index] > 0)
-      { 
-        // draw the projected point
-        realWorldPoint = context.depthMapRealWorld()[index];
-        float radiusPlus;
-        if(userMap[index] == 0) {
-          fill(100);
-          radiusPlus = 0;
-        } else {
-          BPMDetector bpmd = getBpmDetector(userMap[index]);
-          fill(bpmd.getUserColor());
-          realWorldPoint = bpmd.movePoint(realWorldPoint);
-          radiusPlus = Math.max(Math.min(20, (getBodyMoveDetector(userMap[index]).getValue()-100) / 10), 0);
-        }
-        
-        pushMatrix();
-        translate(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);
-        ellipse(0, 0, 10+radiusPlus, 10+radiusPlus);
-        popMatrix();
-      }
-    } 
-  } 
-  popMatrix();
 }
 
 // draw the skeleton with the selected joints
@@ -330,46 +300,6 @@ void onVisibleUser(SimpleOpenNI curContext,int userId)
   //println("onVisibleUser - userId: " + userId);
 }
 
-// -----------------------------------------------------------------
-// Keyboard events
-
-void keyPressed()
-{
-  switch(key)
-  {
-  case ' ':
-    context.setMirror(!context.mirror());
-    break;
-  }
-    
-  switch(keyCode)
-  {
-    case LEFT:
-      rotY += 0.1f;
-      break;
-    case RIGHT:
-      // zoom out
-      rotY -= 0.1f;
-      break;
-    case UP:
-      if(keyEvent.isShiftDown())
-        zoomF += 0.01f;
-      else
-        rotX += 0.1f;
-      break;
-    case DOWN:
-      if(keyEvent.isShiftDown())
-      {
-        zoomF -= 0.01f;
-        if(zoomF < 0.01)
-          zoomF = 0.01;
-      }
-      else
-        rotX -= 0.1f;
-      break;
-  }
-}
-
 void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 {
   PVector jointL = new PVector();
@@ -476,5 +406,43 @@ void tapped(int userId, BPMDetector detector) {
   sound.tapBeat((float)60 / detector.getBeats());
 }
 
-
-
+// キー入力のハンドラ(ユーティリティ的な)
+void keyPressed() {
+  switch(keyCode) {
+    case LEFT:
+      rotY += 0.1f;
+      break;
+    case RIGHT:
+      rotY -= 0.1f;
+      break;
+    case UP:
+      if(keyEvent.isShiftDown())
+        zoomF += 0.01f;
+      else
+        rotX += 0.1f;
+      break;
+    case DOWN:
+      if(keyEvent.isShiftDown()) {
+        zoomF -= 0.01f;
+        if(zoomF < 0.01) { zoomF = 0.01; }
+      } else {
+        rotX -= 0.1f;
+      }
+      break;
+  }
+}
+void keyTyped() {
+  switch (key) {
+    case 's':
+      println("save context");
+      saveDepthMaps();
+      break;
+    case 'm':
+      println("mirror");
+      context.setMirror(!context.mirror());
+      break;
+    default:
+      println("key " + int(key) + " pushed");
+      break;
+  }
+}
