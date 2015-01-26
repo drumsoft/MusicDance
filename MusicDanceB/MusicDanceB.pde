@@ -90,6 +90,22 @@ void drawDepthImageMap() {
   popMatrix();
 }
 
+float camera_t = 5;
+float cameraZ = 1000;
+float cameraX = 0, cameraY = 0, cameraRotX = 0, cameraRotY = 0;
+float triWave(float phase) {
+  float p = 4 * (phase % 1);
+  return p > 2 ? 3 - p : p - 1 ;
+}
+void moveCamera() {
+  float time = getTime();
+  float phase = (time % camera_t) / camera_t;
+  cameraX = 300 * triWave( phase );
+  cameraY = 50 * sin(2 * PI * phase);
+  cameraRotY = (cameraX > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraX*cameraX + cameraZ*cameraZ) );
+  cameraRotX = (cameraY > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraY*cameraY + cameraZ*cameraZ) );
+}
+
 void draw()
 {
   updateTime();
@@ -100,12 +116,15 @@ void draw()
   //drawDepthImageMap();
   
   // set the scene pos
-  translate(width/2, height/2, 0);
+  moveCamera();
+  translate(width/2 + cameraX, height/2 + cameraY, 0);
   rotateX(rotX);
   rotateY(rotY);
   scale(zoomF);
   
-  translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
+  translate(0,0,-cameraZ);  // set the rotation center of the scene 1000 infront of the camera
+  rotateX(cameraRotX);
+  rotateY(cameraRotY);
   
   int[] depthMap = depthMapStore.depthMap();
   PVector[] depthMapReal = depthMapStore.depthMapRealWorld();
