@@ -30,7 +30,7 @@ color[]     userClr = new color[]{ color(255,0,0),
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
-  new DepthMapVisualizer()
+  new DepthMapPointCloud()
 };
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
