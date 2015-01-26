@@ -5,7 +5,7 @@ import java.util.ListIterator;
 class ArthroAngularSpeedometer {
   int tap_queue_length = 16; // 貯めるタップ回数
   float th_confidence = 0.3; // 入力値を採用する最小の confidence
-  float th_speed_lowest = 0.3; // 動きとして判断する最小の曲げ深さ/秒
+  float th_speed_lowest = 1.0; // 動きとして判断する最小の曲げ角速度/秒
   float speedAmplifer;
   
   int userId;
@@ -14,6 +14,7 @@ class ArthroAngularSpeedometer {
   
   float previousAcceleration; // 各点の速度(前回のを保存)
   float previousSpeed; // 各点の速度(前回のを保存)
+  float previousValidSpeed; // 前回の有効な(大きさが th_speed_lowest を超えた)速度
   float previousPosition; // 各点の位置(前回のを保存)
   float previousTime; // 前回の判定時刻
   
@@ -43,7 +44,8 @@ class ArthroAngularSpeedometer {
     previousPosition = 0;
     
     positionHistory = new float[positionAverageWidth];
-    float positionHistorySum = 0;
+    positionHistorySum = 0;
+    positionHistoryIndex = 0;
     for (int i = 0; i < positionAverageWidth; i++) {
       positionHistory[i] = 0;
     }
@@ -95,10 +97,11 @@ class ArthroAngularSpeedometer {
       float currentSpeed = speedAmplifer * (currentPosition - previousPosition) / currentTimeSpan;
       float currentAcceleration = (currentSpeed - previousSpeed) / currentTimeSpan;
       if (Math.abs(currentSpeed) > th_speed_lowest) { // 速度が閾値を超えている
-        if (currentSpeed < 0 && previousSpeed >= 0) { // 下のピークが来た。
-          tapTheBeat(currentTime, -currentSpeed + previousSpeed);
+        if (currentSpeed < 0 && previousValidSpeed >= 0) { // 下のピークが来た。
+          tapTheBeat(currentTime, -currentSpeed + previousValidSpeed);
           isTapped = true;
         }
+        previousValidSpeed = currentSpeed; // 速度が閾値を超えた場合のみ更新する
         // if (currentSpeed > 0 && previousSpeed =< 0) { // 上のピークが来た。
         // }
       }

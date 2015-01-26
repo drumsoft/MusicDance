@@ -3,7 +3,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 class BPMDetector {
-  int movingAverageWidth = 5; // 位置の移動平均値
+  int movingAverageWidth = 3; // 位置の移動平均値
   float[] jointsSpeedAmp = { // 関節のスピードを amplify して量を揃える
     -1.0,
     -1.0,
@@ -146,16 +146,19 @@ class BPMDetector {
   }
   
   void drawSpeed() {
+    float constLine = 1.0; // 比較・参照する定数ライン
+    float displayZoomY = 10.0; // グラフの倍率
     pushMatrix();
     stroke(255, 255, 255);
     line(uiDisplayLeft, base_y, 0, uiDisplayLeft+uiDisplayWidth, base_y, 0);
     stroke(200, 200, 200);
-    float th_y = 1 / 10.0;
-    line(uiDisplayLeft, base_y+th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y+th_y, 0);
-    line(uiDisplayLeft, base_y-th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y-th_y, 0);
+    float th_y = constLine * displayZoomY; 
+    line(uiDisplayLeft, base_y + th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y + th_y, 0);
+    line(uiDisplayLeft, base_y - th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y - th_y, 0);
     
     for (int i = 0; i < yList.length; i++) {
-      yList[i].addFirst(speedometers[i].speed() * 10.0 + base_y);
+      float displayValueY = speedometers[i].speed(); // グラフ表示したい値
+      yList[i].addFirst(displayValueY * displayZoomY + base_y);
       while (yList[i].size() > 90) {
         yList[i].removeLast();
       }
