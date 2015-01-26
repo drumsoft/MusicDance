@@ -69,10 +69,10 @@ class BPMDetector {
       updateBeats(currentTime);
     }
     
-    for (int i = 0; i < speedometers.length; i++) {
-      print("  " + Float.toString(speedometers[i].speed()));
-    }
-    println("");
+    //for (int i = 0; i < speedometers.length; i++) {
+      //print("  " + Float.toString(speedometers[i].speed()));
+    //}
+    //println("");
   }
   
   // タップ履歴を検証して、有効なタップならビートを更新し、タップ検出コールバックを行う

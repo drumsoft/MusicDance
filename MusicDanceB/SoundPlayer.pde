@@ -6,8 +6,8 @@ class SoundPlayer extends Bead {
   float bpmCapacityMax = 190;
   float bpmCapacityMin = 80;
   double originalLength = 15.610;
-  double positionOffsetToFirstBeat = 0; // 最初のビート位置へのオフセット
-  float bpmAdjustingForBeatSlip = 0; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
+  double positionOffsetToFirstBeat = 116; // 最初のビート位置へのオフセット
+  float bpmAdjustingForBeatSlip = 3; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
   float currentBPM;
   float previousTapEvent;
   String[] soundFiles = { // サウンドファイルの一覧
@@ -44,6 +44,8 @@ class SoundPlayer extends Bead {
   };
   SamplePlayer playingSong;
   SamplePlayer[] players;
+  Gain masterGain;
+  
   int tapCount = 0;
   int currentSong = 0; // [0, 3] 現在の曲
   int currentPart = 0; // テンションによって変化 [0, 3] タップがなくなったら 4, 5, 次の曲
@@ -54,6 +56,7 @@ class SoundPlayer extends Bead {
   float tension, handsUpFactor;
   int lowTensionPartCount = 0;
   boolean songChangeBreakPlayed = false;
+  float fadeInVolume = -1.0;
   
   AudioContext ac;
   
@@ -62,6 +65,8 @@ class SoundPlayer extends Bead {
     currentBPM = originalBPM;
     
     ac = new AudioContext();
+    masterGain = new Gain(ac, 1, 0.0);
+    ac.out.addInput(masterGain);
     
     speedGlide = new Glide(ac, 1.0, 2000);
     
@@ -88,6 +93,12 @@ class SoundPlayer extends Bead {
     currentBPM = bpm;
     speedGlide.setValue((currentBPM + (float)(beatSlipping() * bpmAdjustingForBeatSlip)) / originalBPM);
     previousTapEvent = getTime();
+    
+    if (fadeInVolume < 1.0) {
+      fadeInVolume += 1.0 / 16.0;
+      masterGain.setGain(Math.max(0.0, Math.min(1.0, fadeInVolume)));
+      println( Float.toString(fadeInVolume) + " -> " + Float.toString(Math.max(0.0, Math.min(1.0, fadeInVolume))) );
+    }
   }
   
   float getBPM() {
@@ -110,8 +121,6 @@ class SoundPlayer extends Bead {
   protected void messageReceived(Bead message) {
     SamplePlayer sp = (SamplePlayer) message;
     sp.setEndListener(null);
-    ac.out.removeAllConnections(sp);
-    playingSong = null;
     changeSong(true);
   }
   
@@ -136,9 +145,6 @@ class SoundPlayer extends Bead {
     //players[i].setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
     //players[i].setLoopPointsFraction(0, 1);
     players[i].setRate(speedGlide);
-    //Gain g = new Gain(ac, 2, 0.2);
-    //g.addInput(players[i]);
-    //ac.out.addInput(g);
   }
   
   // 曲を変更する
@@ -187,9 +193,12 @@ class SoundPlayer extends Bead {
       lowTensionPartCount = 0;
     }
     
+    if (playingSong != null) {
+      masterGain.removeConnection(0, playingSong, 0);
+    }
     playingSong = players[currentSong * 6 + currentPart];
     playingSong.reset();
-    ac.out.addInput(playingSong);
+    masterGain.addInput(0, playingSong, 0);
     playingSong.setEndListener(this);
     println("Song:" + currentSong + " Part:" + currentPart + " BPM:" + currentBPM + " tension:" + tension + " hand:" + handsUpFactor);
   }
