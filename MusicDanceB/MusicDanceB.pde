@@ -30,7 +30,8 @@ color[]     userClr = new color[]{ color(255,0,0),
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
-  new DepthMapPointCloud()
+  new DepthMapPointCloud(),
+  new DepthMapMeshedWires()
 };
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
@@ -109,7 +110,7 @@ void draw()
   int[] depthMap = depthMapStore.depthMap();
   PVector[] depthMapReal = depthMapStore.depthMapRealWorld();
   int[] userMap = depthMapStore.userMap();
-  depthMapVisualizer[0].draw(depthMap, depthMapReal, userMap);
+  depthMapVisualizer[((int)getTime() / 3) % depthMapVisualizer.length].draw(depthMap, depthMapReal, userMap);
   
   float movingScore = 0, handsUpScore = 0;
   
