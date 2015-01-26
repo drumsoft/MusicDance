@@ -27,12 +27,13 @@
 * リポジトリ内の MusicDanceB.pde を Processing で開く
 * Run (Sketch -> Run) で実行する
 
-## TODO
+## クラス解説とTODO
 
-* BeatDetector - ビートの検出器(個人別) - 膝の上下でなく、曲げる動き等を試したい。
-* ArthroAngularSpeedometer - BeatDetector が使用する、関節別の角速度測定器
-* SoundPlayer - 音楽データの再生 - 曲を変える条件は再考の余地が。エフェクト等も入れたい。
-* MoveDetector (体の動きの大きさなどの検出)
+* MusicDanceB - メインクラス, Kinectからデータを受けて BPMDetector, 各MoveDetector を動作させ SoundPlayer で音を出す。絵も作る。
+* BPMDetector - 個人別のビート検出器.
+* ArthroAngularSpeedometer - 関節別の角速度測定器 BeatDetector が使用.
+* SoundPlayer - 音楽データの再生 - 曲を変える条件は再考の余地が。エフェクト等も入れたい.
+* MoveDetector (体の動きの大きさなどを検出する抽象クラス)
   * BodyMoveDetector - 上半身の動き - できた
   * GroovyMoveDetector - 体のひねり - 未実装
   * HandsUpMoveDetector - ハンズアップ - できた
