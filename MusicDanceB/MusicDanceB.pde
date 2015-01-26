@@ -7,6 +7,9 @@ import java.util.Map.Entry;
 
 // processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
 
+String depthMapSaveTo = "data/depthMap.json";
+
+DepthMapStore depthMapStore;
 SimpleOpenNI context;
 SoundPlayer sound;
 float        zoomF =0.5f;
@@ -24,6 +27,7 @@ color[]     userClr = new color[]{ color(255,0,0),
                                    color(255,0,255),
                                    color(0,255,255)
                                  };
+color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
   new DepthMapVisualizer()
@@ -34,6 +38,7 @@ float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
 void setup()
 {
   size(1024,768,P3D);  // strange, get drawing error in the cameraFrustum if i use P3D, in opengl there is no problem
+  
   context = new SimpleOpenNI(this);
   if(context.isInit() == false)
   {
@@ -41,6 +46,9 @@ void setup()
      exit();
      return;  
   }
+  
+  depthMapStore = new DepthMapStore(depthMapSaveTo);
+
   initMusicDanceSystem();
 
   // disable mirror
@@ -78,9 +86,6 @@ void drawDepthImageMap() {
   scale((float)1024/640);
   image(context.depthImage(),0,0);
   popMatrix();
-}
-
-void saveDepthMaps() {
 }
 
 void draw()
@@ -434,12 +439,12 @@ void keyPressed() {
 void keyTyped() {
   switch (key) {
     case 's':
+      depthMapStore.save(context);
       println("save context");
-      saveDepthMaps();
       break;
     case 'm':
-      println("mirror");
       context.setMirror(!context.mirror());
+      println("mirror");
       break;
     default:
       println("key " + int(key) + " pushed");
