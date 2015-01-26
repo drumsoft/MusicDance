@@ -1,0 +1,129 @@
+import SimpleOpenNI.*;
+import java.util.LinkedList;
+import java.util.ListIterator;
+
+class ArthroAngularSpeedometer {
+  int tap_queue_length = 16; // 貯めるタップ回数
+  float th_confidence = 0.3; // 入力値を採用する最小の confidence
+  float th_speed_lowest = 0.3; // 動きとして判断する最小の曲げ深さ/秒
+  float speedAmplifer;
+  
+  int userId;
+  SimpleOpenNI context;
+  int jointP, jointA, jointB;
+  
+  float previousAcceleration; // 各点の速度(前回のを保存)
+  float previousSpeed; // 各点の速度(前回のを保存)
+  float previousPosition; // 各点の位置(前回のを保存)
+  float previousTime; // 前回の判定時刻
+  
+  // 位置(角度)の移動平均を出す
+  float[] positionHistory; // 位置の履歴を保持するリングバッファ
+  float positionHistorySum; // positionHistory の内容の総計を保持する
+  int positionHistoryIndex; // positionHistory の次回入力箇所
+  int positionAverageWidth; // positionHistory の長さ
+  
+  float previousBeatTime; // 前回ビートとして判定した時刻
+  LinkedList<Float> tap_queue; // タップ時刻の履歴 [前回, 前々回, ..]
+  float tap_previous_time; // 前回タップされた時刻
+  float tap_power; // タップされた強度
+  
+  ArthroAngularSpeedometer(int uid, SimpleOpenNI c, float jointSpeedAmp, int[] jointDirective, int averageWidth, float currentTime) {
+    userId = uid;
+    context = c;
+    speedAmplifer = jointSpeedAmp;
+    jointP = jointDirective[0];
+    jointA = jointDirective[1];
+    jointB = jointDirective[2];
+    positionAverageWidth = averageWidth;
+    
+    previousTime = currentTime;
+    previousAcceleration = 0;
+    previousSpeed = 0;
+    previousPosition = 0;
+    
+    positionHistory = new float[positionAverageWidth];
+    float positionHistorySum = 0;
+    for (int i = 0; i < positionAverageWidth; i++) {
+      positionHistory[i] = 0;
+    }
+    
+    tap_queue = new LinkedList<Float>();
+    tap_previous_time = 0;
+    tap_power = 0;
+  }
+  
+  // 関節(PA,PB)の曲げ深さ(-1〜1.0 = cosAPB)を返す confidence が不足している場合等求められない場合はNaNを返す
+  float getJointBendingDepth() {
+    // 関節(PA,PB)の各点 P, A, B を取得
+    PVector p = new PVector(), a = new PVector(), b = new PVector();
+    float confP = context.getJointPositionSkeleton(userId, jointP, p);
+    if (confP < th_confidence) return Float.NaN;
+    float confA = context.getJointPositionSkeleton(userId, jointA, a);
+    if (confA < th_confidence) return Float.NaN;
+    float xPA = a.x - p.x, yPA = a.y - p.y, zPA = a.z - p.z;
+    float lengthPA2 = xPA * xPA + yPA * yPA + zPA * zPA;
+    if (lengthPA2 == 0) {
+      return Float.NaN;
+    }
+    float confB = context.getJointPositionSkeleton(userId, jointB, b);
+    if (confB < th_confidence) return Float.NaN;
+    float xPB = b.x - p.x, yPB = b.y - p.y, zPB = b.z - p.z;
+    float lengthPB2 = xPB * xPB + yPB * yPB + zPB * zPB;
+    if (lengthPB2 == 0) {
+      return Float.NaN;
+    }
+    // 内積と長さ(の2乗)から APB (radian) を計算
+    float innerProduct = xPA * xPB + yPA * yPB + zPA * zPB;
+    return (float)Math.acos( innerProduct / (Math.sqrt(lengthPA2) * Math.sqrt(lengthPB2)) );
+  }
+  
+  // 位置(角度)の移動平均値を得る
+  float getPositionMovingAverage(float currentPosition) {
+    positionHistorySum += currentPosition - positionHistory[positionHistoryIndex];
+    positionHistory[positionHistoryIndex] = currentPosition;
+    positionHistoryIndex = (positionHistoryIndex + 1) % positionAverageWidth;
+    return positionHistorySum / (float)positionAverageWidth;
+  }
+  
+  boolean update(float currentTime) {
+    boolean isTapped = false;
+    float currentPosition = getJointBendingDepth();
+    if (!Float.isNaN(currentPosition)) { // 曲げ深さが有効
+      currentPosition = getPositionMovingAverage(currentPosition);
+      float currentTimeSpan = currentTime - previousTime;
+      float currentSpeed = speedAmplifer * (currentPosition - previousPosition) / currentTimeSpan;
+      float currentAcceleration = (currentSpeed - previousSpeed) / currentTimeSpan;
+      if (Math.abs(currentSpeed) > th_speed_lowest) { // 速度が閾値を超えている
+        if (currentSpeed < 0 && previousSpeed >= 0) { // 下のピークが来た。
+          tapTheBeat(currentTime, -currentSpeed + previousSpeed);
+          isTapped = true;
+        }
+        // if (currentSpeed > 0 && previousSpeed =< 0) { // 上のピークが来た。
+        // }
+      }
+      previousAcceleration = currentAcceleration;
+      previousSpeed = currentSpeed;
+      previousPosition = currentPosition;
+      previousTime = currentTime;
+    }
+    return isTapped;
+  }
+  
+  // 部位内タップを登録 (時刻, タップ強度)
+  void tapTheBeat(float time, float power) {
+    tap_queue.addFirst(new Float(time - tap_previous_time));
+    while (tap_queue.size() > tap_queue_length) {
+      tap_queue.removeLast();
+    }
+    tap_previous_time = time;
+    tap_power = power;
+  }
+  
+  float acceleration() { return previousAcceleration; }
+  float speed() { return previousSpeed; }
+  float position() { return previousPosition; }
+  float power() { return tap_power; }
+  LinkedList<Float> tapQueue() { return tap_queue; }
+  
+}

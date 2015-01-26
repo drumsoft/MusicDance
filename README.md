@@ -29,7 +29,8 @@
 
 ## TODO
 
-* BeatDetector - ビートの検出器 - 膝の上下でなく、曲げる動き等を試したい。
+* BeatDetector - ビートの検出器(個人別) - 膝の上下でなく、曲げる動き等を試したい。
+* ArthroAngularSpeedometer - BeatDetector が使用する、関節別の角速度測定器
 * SoundPlayer - 音楽データの再生 - 曲を変える条件は再考の余地が。エフェクト等も入れたい。
 * MoveDetector (体の動きの大きさなどの検出)
   * BodyMoveDetector - 上半身の動き - できた

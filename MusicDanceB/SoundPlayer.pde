@@ -137,7 +137,7 @@ class SoundPlayer extends Bead {
     //players[i].setLoopPointsFraction(0, 1);
     players[i].setRate(speedGlide);
     //Gain g = new Gain(ac, 2, 0.2);
-    //g.addInput(player);
+    //g.addInput(players[i]);
     //ac.out.addInput(g);
   }
   
