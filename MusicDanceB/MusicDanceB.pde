@@ -34,6 +34,7 @@ DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
   new DepthMapMeshedWires(),
   new DepthMapCubes()
 };
+int visualizerIndex = 0;
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
 
@@ -79,7 +80,7 @@ void setup()
     depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
   }
   
-  sound = new SoundPlayer();
+  sound = new SoundPlayer(this);
   sound.start();
 }
 
@@ -100,8 +101,8 @@ float triWave(float phase) {
 void moveCamera() {
   float time = getTime();
   float phase = (time % camera_t) / camera_t;
-  cameraX = 300 * triWave( phase );
-  cameraY = 50 * sin(TWO_PI * phase);
+  cameraX = 100 * triWave( phase );
+  cameraY = 15 * sin(TWO_PI * phase);
   cameraRotY = (cameraX > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraX*cameraX + cameraZ*cameraZ) );
   cameraRotX = (cameraY > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraY*cameraY + cameraZ*cameraZ) );
 }
@@ -129,7 +130,7 @@ void draw()
   int[] depthMap = context.depthMap();
   PVector[] depthMapReal = context.depthMapRealWorld();
   int[] userMap = context.userMap();
-  depthMapVisualizer[((int)getTime() / 3) % depthMapVisualizer.length].draw(depthMap, depthMapReal, userMap);
+  depthMapVisualizer[visualizerIndex].draw(depthMap, depthMapReal, userMap);
   
   float movingScore = 0, handsUpScore = 0;
   
@@ -471,4 +472,8 @@ void keyTyped() {
       println("key " + int(key) + " pushed");
       break;
   }
+}
+
+void songChanged() {
+  visualizerIndex = (visualizerIndex + 1) % depthMapVisualizer.length;
 }

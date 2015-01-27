@@ -22,7 +22,7 @@ class DepthMapMeshedWires extends DepthMapVisualizer {
         }
         BodyMoveDetector bmd = _main.getBodyMoveDetector(userMap[from]);
         if (bmd != null) {
-          strokeWeight(Math.max(Math.min(4, (bmd.getValue()-100) / 50), 1));
+          strokeWeight(Math.max(Math.min(6, (bmd.getValue()-80) / 40), 2));
         } else {
           strokeWeight(3);
         }

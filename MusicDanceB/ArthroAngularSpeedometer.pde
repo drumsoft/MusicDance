@@ -5,7 +5,7 @@ import java.util.ListIterator;
 class ArthroAngularSpeedometer {
   int tap_queue_length = 16; // 貯めるタップ回数
   float th_confidence = 0.3; // 入力値を採用する最小の confidence
-  float th_speed_lowest = 1.0; // 動きとして判断する最小の曲げ角速度/秒
+  float th_speed_lowest = 0.75; // 動きとして判断する最小の曲げ角速度/秒
   float speedAmplifer;
   
   int userId;

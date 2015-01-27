@@ -6,7 +6,7 @@ class SoundPlayer extends Bead {
   float bpmCapacityMax = 190;
   float bpmCapacityMin = 80;
   double originalLength = 15.610;
-  double positionOffsetToFirstBeat = 116; // 最初のビート位置へのオフセット
+  double positionOffsetToFirstBeat = 166; // 最初のビート位置へのオフセット
   float bpmAdjustingForBeatSlip = 3; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
   float currentBPM;
   float previousTapEvent;
@@ -60,8 +60,10 @@ class SoundPlayer extends Bead {
   
   AudioContext ac;
   
+  MusicDanceB main;
   
-  SoundPlayer() {
+  SoundPlayer(MusicDanceB md) {
+    main = md;
     currentBPM = originalBPM;
     
     ac = new AudioContext();
@@ -94,10 +96,10 @@ class SoundPlayer extends Bead {
     speedGlide.setValue((currentBPM + (float)(beatSlipping() * bpmAdjustingForBeatSlip)) / originalBPM);
     previousTapEvent = getTime();
     
-    if (fadeInVolume < 1.0) {
+    if (fadeInVolume < 0.9) {
       fadeInVolume += 1.0 / 16.0;
       masterGain.setGain(Math.max(0.0, Math.min(1.0, fadeInVolume)));
-      println( Float.toString(fadeInVolume) + " -> " + Float.toString(Math.max(0.0, Math.min(1.0, fadeInVolume))) );
+      println( Float.toString(fadeInVolume) + " -> " + Float.toString(Math.max(0.0, Math.min(0.9, fadeInVolume))) );
     }
   }
   
@@ -151,7 +153,7 @@ class SoundPlayer extends Bead {
   void changeSong(boolean isEnded) {
     int nextSong = currentSong, nextPart = currentPart;
     
-    if (currentBPM > 155 && currentSong < 3) { // DnBへ変更条件(同じパートへ)
+    if (currentBPM > 160 && currentSong < 3) { // DnBへ変更条件(同じパートへ)
       nextSong = (nextSong % 2) + 3;
     } else if (currentBPM < 150 && currentSong == 3) { // DnBから元に戻す条件
       nextSong = (nextSong % 3);
@@ -165,8 +167,9 @@ class SoundPlayer extends Bead {
     } else if (handsUpFactor > 0.5) { // 両手上げで最後のパートに(別の曲へつなぎたい)
       nextPart = 5;
     } else { // テンションで パート を切り替え
-      nextPart = (int)Math.min(tension / 150, 3);
       if (nextPart <= currentPart) { nextPart++; } //デモ用 短時間でパートを進める
+      /*
+      nextPart = (int)Math.min(tension / 150, 3);
       
       // ローテンションパートの回数をカウント
       if (currentPart == 0 && nextPart == 0) {
@@ -182,6 +185,7 @@ class SoundPlayer extends Bead {
           songChangeBreakPlayed = true;
         }
       }
+      */
     }
     
     if (nextSong != currentSong) { // 曲変更時
@@ -189,6 +193,7 @@ class SoundPlayer extends Bead {
       songChangeBreakPlayed = false;
       currentSong = nextSong;
       currentPart = nextPart;
+      main.songChanged();
     } else if (nextPart != currentPart) { // パート変更時
       currentPart = nextPart;
       lowTensionPartCount = 0;
