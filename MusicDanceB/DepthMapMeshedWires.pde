@@ -8,7 +8,6 @@ class DepthMapMeshedWires extends DepthMapVisualizer {
     if(depthMap[from] > 0 && depthMap[to] > 0 && userMap[from] == userMap[to]) {
       PVector fromRealPoint = depthMapReal[from];
       PVector toRealPoint = depthMapReal[to];
-      float radiusPlus;
       if(userMap[from] == 0) {
         stroke(100);
         strokeWeight(1);
