@@ -30,8 +30,10 @@ color[]     userClr = new color[]{ color(255,0,0),
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
-  new DepthMapPointCloud(),
-  new DepthMapMeshedWires()
+//  new DepthMapPointCloud(),
+//  new DepthMapMeshedWires(),
+  new DepthMapContours(),
+//  new DepthMapCubes()
 };
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
@@ -101,7 +103,7 @@ void moveCamera() {
   float time = getTime();
   float phase = (time % camera_t) / camera_t;
   cameraX = 300 * triWave( phase );
-  cameraY = 50 * sin(2 * PI * phase);
+  cameraY = 50 * sin(TWO_PI * phase);
   cameraRotY = (cameraX > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraX*cameraX + cameraZ*cameraZ) );
   cameraRotX = (cameraY > 0 ? -1 : 1) * acos( cameraZ / sqrt(cameraY*cameraY + cameraZ*cameraZ) );
 }
