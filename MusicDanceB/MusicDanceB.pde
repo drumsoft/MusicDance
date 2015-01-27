@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 // processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
 
+boolean showSavedImage = false;
 String depthMapSaveTo = "data/depthMap.json";
 
 DepthMapStore depthMapStore;
@@ -30,9 +31,10 @@ color[]     userClr = new color[]{ color(255,0,0),
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
-  new DepthMapPointCloud(),
-  new DepthMapMeshedWires(),
-  new DepthMapCubes()
+  new DepthMapRandomWires(),
+//  new DepthMapPointCloud(),
+//  new DepthMapMeshedWires(),
+//  new DepthMapCubes()
 };
 int visualizerIndex = 0;
 
@@ -51,6 +53,9 @@ void setup()
   }
   
   depthMapStore = new DepthMapStore(depthMapSaveTo);
+  if (showSavedImage) {
+    depthMapStore.load();
+  }
 
   initMusicDanceSystem();
 
@@ -77,7 +82,11 @@ void setup()
   uiDisplayZ = 1;
   
   for (int i = 0; i < depthMapVisualizer.length; i++) {
-    depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
+    if (showSavedImage) {
+      depthMapVisualizer[i].initilize(this, depthMapStore.depthWidth(), depthMapStore.depthHeight());
+    } else {
+      depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
+    }
   }
   
   sound = new SoundPlayer(this);
@@ -127,10 +136,11 @@ void draw()
   rotateX(cameraRotX);
   rotateY(cameraRotY);
   
-  int[] depthMap = context.depthMap();
-  PVector[] depthMapReal = context.depthMapRealWorld();
-  int[] userMap = context.userMap();
-  depthMapVisualizer[visualizerIndex].draw(depthMap, depthMapReal, userMap);
+  if (showSavedImage) {
+    depthMapVisualizer[visualizerIndex].draw(depthMapStore.depthMap(), depthMapStore.depthMapRealWorld(), depthMapStore.userMap());
+  } else {
+    depthMapVisualizer[visualizerIndex].draw(context.depthMap(), context.depthMapRealWorld(), context.userMap());
+  }
   
   float movingScore = 0, handsUpScore = 0;
   
