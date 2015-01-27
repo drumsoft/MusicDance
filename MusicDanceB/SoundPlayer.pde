@@ -166,6 +166,7 @@ class SoundPlayer extends Bead {
       nextPart = 5;
     } else { // テンションで パート を切り替え
       nextPart = (int)Math.min(tension / 150, 3);
+      if (nextPart <= currentPart) { nextPart++; } //デモ用 短時間でパートを進める
       
       // ローテンションパートの回数をカウント
       if (currentPart == 0 && nextPart == 0) {
