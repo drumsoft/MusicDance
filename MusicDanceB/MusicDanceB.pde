@@ -33,6 +33,7 @@ DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
 //  new DepthMapPointCloud(),
 //  new DepthMapMeshedWires(),
   new DepthMapContours(),
+  new DepthMapRandomWires(),
 //  new DepthMapCubes()
 };
 
