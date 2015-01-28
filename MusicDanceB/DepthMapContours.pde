@@ -2,8 +2,8 @@ import java.util.*;
 import java.util.Map.*;
 
 class DepthMapContours extends DepthMapVisualizer {
-  int steps = 20;
-  int contourSpan = 50;
+  int steps = 10;
+  int contourSpan = 100;
   
   DepthMapContours() {
   }
@@ -17,22 +17,36 @@ class DepthMapContours extends DepthMapVisualizer {
     return (int)floor(depth / (float)contourSpan) * contourSpan;
   }
   // 指定のポイント a, b 間に対して、等高線の切片となる位置の配列を linesHash に詰め込む
-  void findIntercepts(HashMap<Integer, LinkedList<PVector>> linesHash, PVector a, PVector b) {
+  void findIntercepts(HashMap<Integer, LinkedList<UserPVector>> linesHash, PVector a, PVector b, int userA, int userB) {
     if (a.z <= b.z) {
       float zSpan = b.z - a.z;
-      for (int d = upperContourDepth(a.z), to = upperContourDepth(b.z); d <= to; d += contourSpan) {
-        LinkedList<PVector> xyzList = linesHash.containsKey(d) ? linesHash.get(d) : new LinkedList<PVector>();
-        float p = (float)d - a.z / zSpan;
+      for (int d = upperContourDepth(a.z), to = lowerContourDepth(b.z); d <= to; d += contourSpan) {
+        LinkedList<UserPVector> xyzList;
+        if (linesHash.containsKey(d)) {
+          xyzList = linesHash.get(d);
+        } else {
+          xyzList = new LinkedList<UserPVector>();
+          linesHash.put(new Integer(d), xyzList);
+        }
+        float p = ((float)d - a.z) / zSpan;
         float q = 1 - p;
-        xyzList.push(new PVector( q * a.x + p * b.x, q * a.y + p * b.y, (float)d ));
+        int user = p > 0.5 ? userB : userA;
+        xyzList.push(new UserPVector( q * a.x + p * b.x, q * a.y + p * b.y, (float)d, user));
       }
     } else {
       float zSpan = a.z - b.z;
-      for (int d = upperContourDepth(a.z), to = upperContourDepth(b.z); d >= to; d -= contourSpan) {
-        LinkedList<PVector> xyzList = linesHash.containsKey(d) ? linesHash.get(d) : new LinkedList<PVector>();
-        float p = (float)d - b.z / zSpan;
+      for (int d = lowerContourDepth(a.z), to = upperContourDepth(b.z); d >= to; d -= contourSpan) {
+        LinkedList<UserPVector> xyzList;
+        if (linesHash.containsKey(d)) {
+          xyzList = linesHash.get(d);
+        } else {
+          xyzList = new LinkedList<UserPVector>();
+          linesHash.put(new Integer(d), xyzList);
+        }
+        float p = ((float)d - b.z) / zSpan;
         float q = 1 - p;
-        xyzList.push(new PVector( p * a.x + q * b.x, p * a.y + q * b.y, (float)d ));
+        int user = p > 0.5 ? userA : userB;
+        xyzList.push(new UserPVector( p * a.x + q * b.x, p * a.y + q * b.y, (float)d, user));
       }
     }
   }
@@ -47,41 +61,49 @@ class DepthMapContours extends DepthMapVisualizer {
         int idxRT = x + (y - steps) * _width;
         int idxLB = (x - steps) + y * _width;
         int idxRB = x + y * _width;
+        if (depthMap[idxLT] <= 0 || depthMap[idxRT] <= 0 || depthMap[idxLB] <= 0 || depthMap[idxRB] <= 0) {
+          continue;
+        }
         PVector pointLT = depthMapReal[idxLT];
         PVector pointRT = depthMapReal[idxRT];
         PVector pointLB = depthMapReal[idxLB];
         PVector pointRB = depthMapReal[idxRB];
+        int userLT = userMap[idxLT];
+        int userRT = userMap[idxRT];
+        int userLB = userMap[idxLB];
+        int userRB = userMap[idxRB];
         // 線を引き始める位置を選択
-        HashMap<Integer, LinkedList<PVector>> linesHash = new HashMap<Integer, LinkedList<PVector>>();
-        findIntercepts(linesHash, pointLT, pointRT);
-        findIntercepts(linesHash, pointRT, pointRB);
-        findIntercepts(linesHash, pointLB, pointRB);
-        findIntercepts(linesHash, pointLT, pointLB);
-        // 設定
-        if(userMap[idxRB] == 0) {
-          stroke(100);
-          strokeWeight(1);
-        } else {
-          BPMDetector bpmd = _main.getBpmDetector(userMap[idxRB]);
-          if (bpmd != null) {
-            stroke(bpmd.getUserColor());
-          } else {
-            stroke(userClr[userMap[idxRB] % userClr.length]);
-          }
-          BodyMoveDetector bmd = _main.getBodyMoveDetector(userMap[idxRB]);
-          if (bmd != null) {
-            strokeWeight(Math.max(Math.min(4, (bmd.getValue()-100) / 50), 1));
-          } else {
-            strokeWeight(3);
-          }
-        }
+        HashMap<Integer, LinkedList<UserPVector>> linesHash = new HashMap<Integer, LinkedList<UserPVector>>();
+        findIntercepts(linesHash, pointLT, pointRT, userLT, userRT);
+        findIntercepts(linesHash, pointRT, pointRB, userRT, userRB);
+        findIntercepts(linesHash, pointLB, pointRB, userLB, userRB);
+        findIntercepts(linesHash, pointLT, pointLB, userLT, userLB);
         // 線を引く
-        for (Iterator<Entry<Integer,LinkedList<PVector>>> it = linesHash.entrySet().iterator(); it.hasNext(); ) {
-          Entry<Integer,LinkedList<PVector>> entry = it.next();
-          LinkedList<PVector> intercepts = entry.getValue();
-          PVector prev = null;
-          for (ListIterator<PVector> itr = intercepts.listIterator(0); itr.hasNext(); ) {
-            PVector cur = itr.next();
+        for (Iterator<Entry<Integer,LinkedList<UserPVector>>> it = linesHash.entrySet().iterator(); it.hasNext(); ) {
+          Entry<Integer,LinkedList<UserPVector>> entry = it.next();
+          LinkedList<UserPVector> intercepts = entry.getValue();
+          UserPVector prev = null;
+          for (ListIterator<UserPVector> itr = intercepts.listIterator(0); itr.hasNext(); ) {
+            UserPVector cur = itr.next();
+            int user = cur.user;
+            // 設定
+            if(user == 0) {
+              stroke(100);
+              strokeWeight(1);
+            } else {
+              BPMDetector bpmd = _main.getBpmDetector(user);
+              if (bpmd != null) {
+                stroke(bpmd.getUserColor());
+              } else {
+                stroke(userClr[user % userClr.length]);
+              }
+              BodyMoveDetector bmd = _main.getBodyMoveDetector(user);
+              if (bmd != null) {
+                strokeWeight(Math.max(Math.min(7, (bmd.getValue()-50) / 30), 1));
+              } else {
+                strokeWeight(3);
+              }
+            }
             if (prev != null) {
               line(cur.x, cur.y, cur.z, prev.x, prev.y, prev.z);
             }
@@ -94,4 +116,12 @@ class DepthMapContours extends DepthMapVisualizer {
     popMatrix();
   }
   
+}
+
+class UserPVector extends PVector {
+  int user;
+  UserPVector(float x, float y, float z, int u) {
+    super(x, y, z);
+    user = u;
+  }
 }
