@@ -31,10 +31,11 @@ color[]     userClr = new color[]{ color(255,0,0),
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
+  new DepthMapMeshedWires(),
+  new DepthMapContours(),
+  new DepthMapCubes(),
+  new DepthMapPointCloud(),
   new DepthMapRandomWires(),
-//  new DepthMapPointCloud(),
-//  new DepthMapMeshedWires(),
-//  new DepthMapCubes()
 };
 int visualizerIndex = 0;
 
