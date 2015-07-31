@@ -1,30 +1,28 @@
 import SimpleOpenNI.*;
 
-class DepthMapStore extends ContextWrapper {
-  String filePath;
+class DepthMapStore extends SimpleOpenNI {
   int width;
   int height;
   int[] dMap;
   int[] uMap;
   PVector[] drMap;
   
-  DepthMapStore(String saveTo) {
-    super();
-    filePath = saveTo;
+  DepthMapStore(processing.core.PApplet parent) {
+    super(parent);
   }
   
-  void save(SimpleOpenNI context) {
+  void save(String saveTo) {
     JSONObject json = new JSONObject();
-    json.setInt("depthWidth", context.depthWidth());
-    json.setInt("depthHeight", context.depthHeight());
-    json.setJSONArray("depthMap", jsonArrayFromIntArray(context.depthMap()));
-    json.setJSONArray("userMap", jsonArrayFromIntArray(context.userMap()));
-    json.setJSONArray("depthMapRealWorld", jsonArrayFromPVectorArray(context.depthMapRealWorld()));
-    saveJSONObject(json, filePath);
+    json.setInt("depthWidth", super.depthWidth());
+    json.setInt("depthHeight", super.depthHeight());
+    json.setJSONArray("depthMap", jsonArrayFromIntArray(super.depthMap()));
+    json.setJSONArray("userMap", jsonArrayFromIntArray(super.userMap()));
+    json.setJSONArray("depthMapRealWorld", jsonArrayFromPVectorArray(super.depthMapRealWorld()));
+    saveJSONObject(json, _parent.dataPath(saveTo));
   }
   
-  void load() {
-    JSONObject json = loadJSONObject(filePath);
+  void load(String saveTo) {
+    JSONObject json = loadJSONObject(_parent.dataPath(saveTo));
     width = json.getInt("depthWidth");
     height = json.getInt("depthHeight");
     dMap = intArrayFromJsonArray(json.getJSONArray("depthMap"));
@@ -37,6 +35,23 @@ class DepthMapStore extends ContextWrapper {
   int[] depthMap() { return dMap; }
   int[] userMap() { return uMap; }
   PVector[] depthMapRealWorld() { return drMap; }
+  
+  //isInit()
+  //mirror()
+  //setMirror()
+  //enableIR()
+  //enableDepth()
+  //enableUser()
+  //depthImage()
+  //update()
+  //drawCamFrustum()
+  
+  //getUsers()
+  //isTrackingSkeleton()
+  //getCoM()
+  //getJointPositionSkeleton()
+  //getJointOrientationSkeleton()
+  //startTrackingSkeleton()
   
   // ----------------------------------------------
   JSONArray jsonArrayFromIntArray(int[] array) {

@@ -7,10 +7,16 @@ import java.util.Map.Entry;
 
 // processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
 
-boolean showSavedImage = false;
-String depthMapSaveTo = "data/depthMap.json";
+static final int MODE_DEMO = 0;
+static final int MODE_RECORD = 1;
+static final int MODE_PLAYBACK = 2;
+static final int MODE_PLAYBACK_STILL = 3;
 
-DepthMapStore depthMapStore;
+static final int run_mode = MODE_PLAYBACK;
+
+String pathToStoreStill = "depthMap.json";
+String pathToStoreMovie = "cameraRecorded.oni";
+
 SimpleOpenNI context;
 SoundPlayer sound;
 float        zoomF =0.5f;
@@ -45,19 +51,29 @@ void setup()
 {
   size(1024,768,P3D);  // strange, get drawing error in the cameraFrustum if i use P3D, in opengl there is no problem
   
-  context = new SimpleOpenNI(this);
-  if(context.isInit() == false)
-  {
-     println("Can't init SimpleOpenNI, maybe the camera is not connected!"); 
-     exit();
-     return;  
+  switch (run_mode) {
+    case MODE_DEMO:
+      context = new SimpleOpenNI(this);
+      break;
+    case MODE_RECORD:
+      context = new SimpleOpenNI(this);
+      context.enableRecorder(pathToStoreMovie);
+      context.addNodeToRecording(SimpleOpenNI.NODE_DEPTH,true);
+      context.addNodeToRecording(SimpleOpenNI.NODE_USER, true);
+      context.addNodeToRecording(SimpleOpenNI.NODE_IR, true);
+      break;
+    case MODE_PLAYBACK:
+      context = new SimpleOpenNI(this, pathToStoreMovie);
+      break;
+    case MODE_PLAYBACK_STILL:
+      context = new DepthMapStore(this);
+      ((DepthMapStore)context).load(pathToStoreStill);
+      break;
+  }
+  if(context.isInit() == false) {
+     println(" * * * Can't init SimpleOpenNI, maybe the camera is not connected! * * *"); 
   }
   
-  depthMapStore = new DepthMapStore(depthMapSaveTo);
-  if (showSavedImage) {
-    depthMapStore.load();
-  }
-
   initMusicDanceSystem();
 
   // disable mirror
@@ -83,11 +99,7 @@ void setup()
   uiDisplayZ = 1;
   
   for (int i = 0; i < depthMapVisualizer.length; i++) {
-    if (showSavedImage) {
-      depthMapVisualizer[i].initilize(this, depthMapStore.depthWidth(), depthMapStore.depthHeight());
-    } else {
-      depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
-    }
+    depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
   }
   
   sound = new SoundPlayer(this);
@@ -137,11 +149,7 @@ void draw()
   rotateX(cameraRotX);
   rotateY(cameraRotY);
   
-  if (showSavedImage) {
-    depthMapVisualizer[visualizerIndex].draw(depthMapStore.depthMap(), depthMapStore.depthMapRealWorld(), depthMapStore.userMap());
-  } else {
-    depthMapVisualizer[visualizerIndex].draw(context.depthMap(), context.depthMapRealWorld(), context.userMap());
-  }
+  depthMapVisualizer[visualizerIndex].draw(context.depthMap(), context.depthMapRealWorld(), context.userMap());
   
   float movingScore = 0, handsUpScore = 0;
   
@@ -472,7 +480,7 @@ void keyPressed() {
 void keyTyped() {
   switch (key) {
     case 's':
-      depthMapStore.save(context);
+      ((DepthMapStore)context).save(pathToStoreStill);
       println("save context");
       break;
     case 'm':
