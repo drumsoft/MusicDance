@@ -15,7 +15,7 @@ static final int MODE_PLAYBACK_STILL = 3;
 static final int run_mode = MODE_PLAYBACK;
 
 String pathToStoreStill = "depthMap.json";
-String pathToStoreMovie = "cameraRecorded.oni";
+String pathToStoreMovie = "SkeletonRec.oni";
 
 SimpleOpenNI context;
 SoundPlayer sound;
@@ -53,14 +53,8 @@ void setup()
   
   switch (run_mode) {
     case MODE_DEMO:
-      context = new SimpleOpenNI(this);
-      break;
     case MODE_RECORD:
       context = new SimpleOpenNI(this);
-      context.enableRecorder(pathToStoreMovie);
-      context.addNodeToRecording(SimpleOpenNI.NODE_DEPTH,true);
-      context.addNodeToRecording(SimpleOpenNI.NODE_USER, true);
-      context.addNodeToRecording(SimpleOpenNI.NODE_IR, true);
       break;
     case MODE_PLAYBACK:
       context = new SimpleOpenNI(this, pathToStoreMovie);
@@ -85,6 +79,15 @@ void setup()
 
   // enable skeleton generation for all joints
   context.enableUser();
+
+  switch (run_mode) {
+    case MODE_RECORD:
+      context.enableRecorder(pathToStoreMovie);
+      context.addNodeToRecording(SimpleOpenNI.NODE_DEPTH,true);
+      //context.addNodeToRecording(SimpleOpenNI.NODE_USER, true);
+      //context.addNodeToRecording(SimpleOpenNI.NODE_IR, true);
+      break;
+  }
 
   stroke(255,255,255);
   smooth();
