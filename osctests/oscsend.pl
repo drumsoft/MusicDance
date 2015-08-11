@@ -34,7 +34,7 @@ my $VAR1;
 while (<>) {
   chomp;
   my ($at, $dump) = split /\t/, $_, 2;
-  if ($at && $dump) {
+  if ($at =~ /^\d+$/ && $dump) {
     eval($dump);
     if ($@) {
       print STDERR "[oscsend] eval error at $at: $dump\n";
