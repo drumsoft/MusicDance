@@ -2,9 +2,13 @@
 
 use strict;
 use warnings;
-use Net::OpenSoundControl::Client;
+
 use Time::HiRes qw(time sleep);
 
+use lib './lib';
+use Net::OpenSoundControl::Client;
+
+my $verbose = 0;
 my $host = "127.0.0.1";
 my $port = 7772;
 
@@ -37,7 +41,7 @@ while (<>) {
       next;
     }
     my $interval = ($at / 1000) + $start - time();
-    print STDERR "[oscsend] $interval: $dump\n";
+    print STDERR "[oscsend] $interval: $dump\n" if $verbose;
     if ($interval > 0) {
       sleep($interval);
     }
