@@ -108,14 +108,9 @@ sub readloop {
     my $self = shift;
 
     my ($msg, $host);
-open my $log, '>tempudp.log';
-my $count = 0;
+
     $self->{RUNNING} = 1;
     while ($self->{SOCKET}->recv($msg, $self->{MAXLEN})) {
-my $header = '-- ' . (++$count) . ', ' . length($msg);
-$header .= '-' x (16 - length($header));
-print $header, "\n";
-print $log $header, $msg, ' ' x (16 - (length($msg) % 16));
         my ($port, $ipaddr) = sockaddr_in($self->{SOCKET}->peername);
         $host = gethostbyaddr($ipaddr, AF_INET) || '';
 
@@ -124,7 +119,6 @@ print $log $header, $msg, ' ' x (16 - (length($msg) % 16));
 
         last unless $self->{RUNNING};
     }
-close $log;
 }
 
 =item stoploop()
