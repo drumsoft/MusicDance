@@ -150,11 +150,11 @@ class BPMDetector {
     float displayZoomY = 10.0; // グラフの倍率
     pushMatrix();
     stroke(255, 255, 255);
-    line(uiDisplayLeft, base_y, 0, uiDisplayLeft+uiDisplayWidth, base_y, 0);
+    line(uiDisplayLeft, base_y, uiDisplayLeft+uiDisplayWidth, base_y);
     stroke(200, 200, 200);
     float th_y = constLine * displayZoomY; 
-    line(uiDisplayLeft, base_y + th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y + th_y, 0);
-    line(uiDisplayLeft, base_y - th_y, 0, uiDisplayLeft+uiDisplayWidth, base_y - th_y, 0);
+    line(uiDisplayLeft, base_y + th_y, uiDisplayLeft+uiDisplayWidth, base_y + th_y);
+    line(uiDisplayLeft, base_y - th_y, uiDisplayLeft+uiDisplayWidth, base_y - th_y);
     
     for (int i = 0; i < yList.length; i++) {
       float displayValueY = speedometers[i].speed(); // グラフ表示したい値
@@ -166,7 +166,7 @@ class BPMDetector {
       int color_r = Math.min(255, (int)(speedometers[i].power() / 4.0) + 100);
       stroke(color_r, 255, color_b);
       
-      float px = width, py = yList[i].getFirst();
+      float px = uiDisplayLeft + uiDisplayWidth, py = yList[i].getFirst();
       int number, xIndex;
       number = xIndex = yList[i].size() - 1;
       if (number > 0) {
@@ -174,7 +174,7 @@ class BPMDetector {
         while (itr.hasNext()) {
           float x = uiDisplayLeft + (uiDisplayWidth * xIndex / number);
           float y = itr.next().intValue();
-          line(px,py,0, x,y,0);
+          line(px,py, x,y);
           px = x; py = y;
           xIndex--;
         }

@@ -101,11 +101,10 @@ void setup()
               float(width)/float(height),
               10,150000);
 
-  uiDisplayLeft   = -(float)width  * 0.18;
-  uiDisplayTop    = -(float)height * 0.18;
-  uiDisplayWidth  =  (float)width  * 0.36;
-  uiDisplayHeight =  (float)height * 0.36;
-  uiDisplayZ = 1;
+  uiDisplayLeft   = width * 0.15;
+  uiDisplayTop    = height * 0.15;
+  uiDisplayWidth  = width * 0.7;
+  uiDisplayHeight = height * 0.7;
   
   for (int i = 0; i < depthMapVisualizer.length; i++) {
     depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
@@ -172,7 +171,6 @@ void draw()
       drawSkeleton(userList[i]);
       BPMDetector bpmDetector = getBpmDetector(userList[i]);
       bpmDetector.fetchPositionData(getTime());
-      bpmDetector.drawSpeed();
       HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
       hmDetector.update();
       BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
@@ -223,7 +221,16 @@ void draw()
 
   // draw the kinect cam
   //context.drawCamFrustum();
-  
+
+  camera();
+  hint(DISABLE_DEPTH_TEST);
+  for(int i=0;i<userList.length;i++)
+  {
+    if(context.isTrackingSkeleton(userList[i])) {
+      getBpmDetector(userList[i]).drawSpeed();
+    }
+  }
+
   osc.send(context);
 }
 
