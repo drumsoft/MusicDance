@@ -1,11 +1,15 @@
 // Music Dance (Japan Party Party)
 // based on SimpleOpenNI User3d Test http://code.google.com/p/simple-openni by Max Rheiner / Interaction Design / Zhdk / http://iad.zhdk.ch/ 12/12/2012
 
+// processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
+
 import SimpleOpenNI.*;
 import java.util.*;
 import java.util.Map.Entry;
 
-// processing-java --run --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB/ --output=../output --force
+static final String oscSendHost = "127.0.0.1";
+static final int oscSendPort = 7771;
+static final int oscRecvPort = 7772;
 
 static final int MODE_DEMO = 0;
 static final int MODE_RECORD = 1;
@@ -14,11 +18,13 @@ static final int MODE_PLAYBACK_STILL = 3;
 
 static final int run_mode = MODE_PLAYBACK;
 
-String pathToStoreStill = "depthMap.json";
-String pathToStoreMovie = "SkeletonRec.oni";
+static final String pathToStoreStill = "depthMap.json";
+static final String pathToStoreMovie = "SkeletonRec.oni";
 
 SimpleOpenNI context;
 SoundPlayer sound;
+OscAgent osc;
+
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
                                    // the data from openni comes upside down
@@ -104,6 +110,8 @@ void setup()
   for (int i = 0; i < depthMapVisualizer.length; i++) {
     depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
   }
+  
+  osc = new OscAgent(oscRecvPort, oscSendHost, oscSendPort);
   
   sound = new SoundPlayer(this);
   sound.start();
@@ -215,6 +223,8 @@ void draw()
 
   // draw the kinect cam
   //context.drawCamFrustum();
+  
+  osc.send(context);
 }
 
 // 軸は X(右) Y(上) Z(奥) が正方向, Z軸座標未指定時は z=1 の面に描画
