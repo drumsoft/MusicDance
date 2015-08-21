@@ -12,43 +12,29 @@ class ArthroAngularSpeedometer {
   SimpleOpenNI context;
   int jointP, jointA, jointB;
   
-  float previousAcceleration; // 各点の速度(前回のを保存)
   float previousSpeed; // 各点の速度(前回のを保存)
   float previousValidSpeed; // 前回の有効な(大きさが th_speed_lowest を超えた)速度
-  float previousPosition; // 各点の位置(前回のを保存)
-  float previousTime; // 前回の判定時刻
   
-  // 位置(角度)の移動平均を出す
-  float[] positionHistory; // 位置の履歴を保持するリングバッファ
-  float positionHistorySum; // positionHistory の内容の総計を保持する
-  int positionHistoryIndex; // positionHistory の次回入力箇所
-  int positionAverageWidth; // positionHistory の長さ
+  MoveFilterBase filter1; // ノイズのフィルタ
+  MoveFilterBase filter2; // 
   
   float previousBeatTime; // 前回ビートとして判定した時刻
   LinkedList<Float> tap_queue; // タップ時刻の履歴 [前回, 前々回, ..]
   float tap_previous_time; // 前回タップされた時刻
   float tap_power; // タップされた強度
   
-  ArthroAngularSpeedometer(int uid, SimpleOpenNI c, float jointSpeedAmp, int[] jointDirective, int averageWidth, float currentTime) {
+  ArthroAngularSpeedometer(int uid, SimpleOpenNI c, float jointSpeedAmp, int[] jointDirective, float currentTime, MoveFilterBase f1, MoveFilterBase f2) {
+    filter1 = f1;
+    filter2 = f2;
+    
     userId = uid;
     context = c;
     speedAmplifer = jointSpeedAmp;
     jointP = jointDirective[0];
     jointA = jointDirective[1];
     jointB = jointDirective[2];
-    positionAverageWidth = averageWidth;
     
-    previousTime = currentTime;
-    previousAcceleration = 0;
     previousSpeed = 0;
-    previousPosition = 0;
-    
-    positionHistory = new float[positionAverageWidth];
-    positionHistorySum = 0;
-    positionHistoryIndex = 0;
-    for (int i = 0; i < positionAverageWidth; i++) {
-      positionHistory[i] = 0;
-    }
     
     tap_queue = new LinkedList<Float>();
     tap_previous_time = 0;
@@ -80,22 +66,12 @@ class ArthroAngularSpeedometer {
     return (float)Math.acos( innerProduct / (Math.sqrt(lengthPA2) * Math.sqrt(lengthPB2)) );
   }
   
-  // 位置(角度)の移動平均値を得る
-  float getPositionMovingAverage(float currentPosition) {
-    positionHistorySum += currentPosition - positionHistory[positionHistoryIndex];
-    positionHistory[positionHistoryIndex] = currentPosition;
-    positionHistoryIndex = (positionHistoryIndex + 1) % positionAverageWidth;
-    return positionHistorySum / (float)positionAverageWidth;
-  }
-  
   boolean update(float currentTime) {
     boolean isTapped = false;
     float currentPosition = getJointBendingDepth();
     if (!Float.isNaN(currentPosition)) { // 曲げ深さが有効
-      currentPosition = getPositionMovingAverage(currentPosition);
-      float currentTimeSpan = currentTime - previousTime;
-      float currentSpeed = speedAmplifer * (currentPosition - previousPosition) / currentTimeSpan;
-      float currentAcceleration = (currentSpeed - previousSpeed) / currentTimeSpan;
+      currentPosition = filter1.input(currentPosition, currentTime);
+      float currentSpeed = speedAmplifer * filter2.input(currentPosition, currentTime);
       if (Math.abs(currentSpeed) > th_speed_lowest) { // 速度が閾値を超えている
         if (currentSpeed < 0 && previousValidSpeed >= 0) { // 下のピークが来た。
           tapTheBeat(currentTime, -currentSpeed + previousValidSpeed);
@@ -105,10 +81,7 @@ class ArthroAngularSpeedometer {
         // if (currentSpeed > 0 && previousSpeed =< 0) { // 上のピークが来た。
         // }
       }
-      previousAcceleration = currentAcceleration;
       previousSpeed = currentSpeed;
-      previousPosition = currentPosition;
-      previousTime = currentTime;
     }
     return isTapped;
   }
@@ -123,10 +96,7 @@ class ArthroAngularSpeedometer {
     tap_power = power;
   }
   
-  float acceleration() { return previousAcceleration; }
   float speed() { return previousSpeed; }
-  float position() { return previousPosition; }
   float power() { return tap_power; }
   LinkedList<Float> tapQueue() { return tap_queue; }
-  
 }

@@ -54,7 +54,11 @@ class BPMDetector {
     
     speedometers = new ArthroAngularSpeedometer[jointsToReadBPM.length];
     for (i = 0; i < jointsToReadBPM.length; i++) {
-      speedometers[i] = new ArthroAngularSpeedometer(userId, context, jointsSpeedAmp[i],  jointsToReadBPM[i], movingAverageWidth, currentTime);
+      //MoveFilterBase f1 = new MoveFilterAverage(movingAverageWidth);
+      MoveFilterBase f1 = new MoveFilterLPF(5, 1, 27);
+      //MoveFilterBase f2 = new MoveFilterSpeed(currentTime);
+      MoveFilterBase f2 = new MoveFilterAcceleration(currentTime);
+      speedometers[i] = new ArthroAngularSpeedometer(userId, context, jointsSpeedAmp[i],  jointsToReadBPM[i], currentTime, f1, f2);
     }
   }
   
