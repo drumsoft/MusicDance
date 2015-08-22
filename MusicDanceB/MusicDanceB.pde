@@ -49,7 +49,7 @@ DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
   new DepthMapPointCloud(),
   new DepthMapRandomWires(),
 };
-int visualizerIndex = 0;
+int visualizerIndex = 1;
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
 
@@ -171,6 +171,7 @@ void draw()
       drawSkeleton(userList[i]);
       BPMDetector bpmDetector = getBpmDetector(userList[i]);
       bpmDetector.fetchPositionData(getTime());
+      bpmDetector.updateVisual();
       HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
       hmDetector.update();
       BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
@@ -222,14 +223,7 @@ void draw()
   // draw the kinect cam
   //context.drawCamFrustum();
 
-  camera();
-  hint(DISABLE_DEPTH_TEST);
-  for(int i=0;i<userList.length;i++)
-  {
-    if(context.isTrackingSkeleton(userList[i])) {
-      getBpmDetector(userList[i]).drawSpeed();
-    }
-  }
+  drawGraphs();
 
   osc.send(context);
 }
@@ -431,9 +425,9 @@ void initMusicDanceSystem() {
 
 void startBpmDetecting(int userId) {
   BPMDetector bpmDetector = new BPMDetector(userId, context, this, getTime());
-  bpmDetector.setY(uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
-  bpmDetector.setUserColor(userClr[ (userId - 1) % userClr.length ]);
   bpmDetectors.put(new Integer(userId), bpmDetector);
+  bpmDetector.initVisual(userClr[ (userId - 1) % userClr.length ]);
+  setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
   
   HandsUpMoveDetector hmDetector = new HandsUpMoveDetector(userId, context, this);
   hmDetector.setMoveParts(armsDetectionParts);
@@ -515,4 +509,23 @@ void keyTyped() {
 
 void songChanged() {
   visualizerIndex = (visualizerIndex + 1) % depthMapVisualizer.length;
+}
+
+// ----------------------
+
+void setupGraph(int userId, float y) {
+  getBpmDetector(userId).graph = new DebugGraph(y, 3, new int[]{#FFCC00,#FF00CC,#00ccFF});
+}
+void addDataToGraph(int userId, int series, float y) {
+  getBpmDetector(userId).graph.addValue(series, y);
+}
+void drawGraphs() {
+  camera();
+  hint(DISABLE_DEPTH_TEST);
+  int[] userList = context.getUsers();
+  for(int i=0;i<userList.length;i++) {
+    if(context.isTrackingSkeleton(userList[i])) {
+      getBpmDetector(userList[i]).graph.draw();
+    }
+  }
 }

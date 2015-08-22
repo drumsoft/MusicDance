@@ -62,7 +62,19 @@ class BPMDetector {
     }
   }
   
+  MoveFilterBase t1 = new MoveFilterAverage(movingAverageWidth);
+  MoveFilterBase t2 = new MoveFilterLPF(5, 1, 27);
+  MoveFilterBase t3 = new MoveFilterSpeed(0);
+  
   void fetchPositionData(float currentTime) {
+    
+    PVector p = new PVector();
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
+    float speed = t3.input(p.y, currentTime);
+    addDataToGraph(userId, 0, speed / 50);
+    addDataToGraph(userId, 1, t1.input(speed, currentTime) / 50);
+    addDataToGraph(userId, 2, t2.input(speed, currentTime) / 50);
+    
     boolean isTapped = false;
     for (int i = 0; i < speedometers.length; i++) {
       if (speedometers[i].update(currentTime)) {
@@ -72,11 +84,6 @@ class BPMDetector {
     if (isTapped) {
       updateBeats(currentTime);
     }
-    
-    //for (int i = 0; i < speedometers.length; i++) {
-      //print("  " + Float.toString(speedometers[i].speed()));
-    //}
-    //println("");
   }
   
   // タップ履歴を検証して、有効なタップならビートを更新し、タップ検出コールバックを行う
@@ -134,76 +141,26 @@ class BPMDetector {
   }
   
   // -----------------------------------------------------
+  DebugGraph graph;
   
-  float base_y, pointsZoom;
-  int color_b;
-  LinkedList<Float>[] yList; // 部位ごとの速度の配列
-  
-  void setY(float y) {
-    base_y = y;
-    color_b = (int)Math.min(Math.abs(y), 255);
-    yList = new LinkedList[jointsToReadBPM.length];
-    for (int i = 0; i < jointsToReadBPM.length; i++) {
-      yList[i] = new LinkedList<Float>();
-    }
-    centerVector = new PVector();
-  }
-  
-  void drawSpeed() {
-    float constLine = 1.0; // 比較・参照する定数ライン
-    float displayZoomY = 10.0; // グラフの倍率
-    pushMatrix();
-    stroke(255, 255, 255);
-    line(uiDisplayLeft, base_y, uiDisplayLeft+uiDisplayWidth, base_y);
-    stroke(200, 200, 200);
-    float th_y = constLine * displayZoomY; 
-    line(uiDisplayLeft, base_y + th_y, uiDisplayLeft+uiDisplayWidth, base_y + th_y);
-    line(uiDisplayLeft, base_y - th_y, uiDisplayLeft+uiDisplayWidth, base_y - th_y);
-    
-    for (int i = 0; i < yList.length; i++) {
-      float displayValueY = speedometers[i].speed(); // グラフ表示したい値
-      yList[i].addFirst(displayValueY * displayZoomY + base_y);
-      while (yList[i].size() > 90) {
-        yList[i].removeLast();
-      }
-      
-      int color_r = Math.min(255, (int)(speedometers[i].power() / 4.0) + 100);
-      stroke(color_r, 255, color_b);
-      
-      float px = uiDisplayLeft + uiDisplayWidth, py = yList[i].getFirst();
-      int number, xIndex;
-      number = xIndex = yList[i].size() - 1;
-      if (number > 0) {
-        ListIterator<Float> itr = yList[i].listIterator(0);
-        while (itr.hasNext()) {
-          float x = uiDisplayLeft + (uiDisplayWidth * xIndex / number);
-          float y = itr.next().intValue();
-          line(px,py, x,y);
-          px = x; py = y;
-          xIndex--;
-        }
-      }
-    }
-    popMatrix();
-    updateUserColor(getTime());
-    context.getCoM(userId, centerVector);
-  }
-  
-  color originalUserColor, currentUserColor;
   PVector centerVector;
+  float pointsZoom;
+  color originalUserColor, currentUserColor;
   
-  void setUserColor(color c) {
-    originalUserColor = c;
+  void initVisual(color userColor) {
+    centerVector = new PVector();
+    originalUserColor = userColor;
   }
   
-  void updateUserColor(float currentTime) {
-    float elapsedTime = currentTime - previousBeatTime;
+  void updateVisual() {
+    float elapsedTime = getTime() - previousBeatTime;
     pointsZoom = 0.1 - elapsedTime;
     if (elapsedTime < 0.1) {
       currentUserColor = lerpColor(whiteColor, originalUserColor, elapsedTime / 0.4);
     } else {
       currentUserColor = originalUserColor;
     }
+    context.getCoM(userId, centerVector);
   }
   
   color getUserColor() {
