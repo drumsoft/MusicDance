@@ -31,7 +31,7 @@ my $client =
 print STDERR "[oscsend] Sending out test messages to $host:$port\n";
 
 my $VAR1;
-while (<>) {
+while (<STDIN>) {
   chomp;
   my ($at, $dump) = split /\t/, $_, 2;
   if ($at =~ /^\d+$/ && $dump) {
