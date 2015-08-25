@@ -16,7 +16,7 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
-static final int run_mode = MODE_PLAYBACK;
+static final int run_mode = MODE_DEMO;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
@@ -226,7 +226,18 @@ void draw()
   drawGraphs();
 
   osc.send(context);
+  
+  frameCounter++;
+  if (frameCounter == 100) {
+    float currentTime = getTime();
+    println("FPS: " + (new Float(frameCounter / (currentTime - frameCountStart))).toString());
+    frameCountStart = currentTime;
+    frameCounter = 0;
+  }
 }
+
+int frameCounter = 0;
+float frameCountStart = 0;
 
 // 軸は X(右) Y(上) Z(奥) が正方向, Z軸座標未指定時は z=1 の面に描画
 // この時 x, y, は [-width * 0.18, width * 0.18] に

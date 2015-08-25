@@ -15,8 +15,8 @@ class BPMDetector {
   };
   int[][] jointsToReadBPM = { // BPMの読み込みに使うSkelton上の関節設定
     { SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_HAND }, // 左肘
-    { SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_HAND }, // 右肘
-//    { SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_TORSO }, // 頭(ヘドバン)
+//    { SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_HAND }, // 右肘
+    { SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_TORSO }, // 頭(ヘドバン)
 //    { SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_FOOT}, // 左膝
 //    { SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_FOOT}, // 右膝
     { SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_SHOULDER}, // 左膝
@@ -57,23 +57,33 @@ class BPMDetector {
       //MoveFilterBase f1 = new MoveFilterAverage(movingAverageWidth);
       MoveFilterBase f1 = new MoveFilterLPF(5, 1, 27);
       //MoveFilterBase f2 = new MoveFilterSpeed(currentTime);
-      MoveFilterBase f2 = new MoveFilterAcceleration(currentTime);
+      MoveFilterBase f2 = new MoveFilterSpeed(currentTime);
       speedometers[i] = new ArthroAngularSpeedometer(userId, context, jointsSpeedAmp[i],  jointsToReadBPM[i], currentTime, f1, f2);
     }
   }
   
-  MoveFilterBase t1 = new MoveFilterAverage(movingAverageWidth);
-  MoveFilterBase t2 = new MoveFilterLPF(5, 1, 27);
-  MoveFilterBase t3 = new MoveFilterSpeed(0);
+  MoveFilterBase t1f = new MoveFilterLPF(5, 1, 27);
+  MoveFilterBase t1s = new MoveFilterSpeed(0);
+  CycleFounder cf1 = new CycleFounderShift(8, 30, 60);
+  CycleFounder cf2 = new CycleFounderFFT(64, 26);
+  float clipping = 1.0;
   
   void fetchPositionData(float currentTime) {
     
     PVector p = new PVector();
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
-    float speed = t3.input(p.y, currentTime);
-    addDataToGraph(userId, 0, speed / 50);
-    addDataToGraph(userId, 1, t1.input(speed, currentTime) / 50);
-    addDataToGraph(userId, 2, t2.input(speed, currentTime) / 50);
+    float speed = t1f.input(t1s.input(p.y, currentTime), currentTime);
+    addDataToGraph(userId, 0, speed / 25); // yello
+    addDataToGraph(userId, 1, cf2.input(speed)); // cyan
+    if (speed > clipping) {
+      speed = clipping;
+    } else if (speed < -clipping) {
+      speed = -clipping;
+    }
+    //addDataToGraph(userId, 1, speed); // purple
+    float cycle = cf1.input(speed);
+    addDataToGraph(userId, 2, cycle); // cyan
+    //println("BPM: " + String.valueOf(60 * 29 / cycle));
     
     boolean isTapped = false;
     for (int i = 0; i < speedometers.length; i++) {

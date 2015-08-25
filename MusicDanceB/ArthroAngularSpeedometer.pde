@@ -70,8 +70,11 @@ class ArthroAngularSpeedometer {
     boolean isTapped = false;
     float currentPosition = getJointBendingDepth();
     if (!Float.isNaN(currentPosition)) { // 曲げ深さが有効
-      currentPosition = filter1.input(currentPosition, currentTime);
-      float currentSpeed = speedAmplifer * filter2.input(currentPosition, currentTime);
+      currentPosition = filter1.input(filter2.input(currentPosition, currentTime), currentTime);
+//      if (jointP == SimpleOpenNI.SKEL_NECK) {
+//        addDataToGraph(userId, 0, currentPosition * 2); // yellow
+//      }
+      float currentSpeed = speedAmplifer * currentPosition;
       if (Math.abs(currentSpeed) > th_speed_lowest) { // 速度が閾値を超えている
         if (currentSpeed < 0 && previousValidSpeed >= 0) { // 下のピークが来た。
           tapTheBeat(currentTime, -currentSpeed + previousValidSpeed);
