@@ -110,9 +110,9 @@ class OscAgent {
         color userColor = getBpmDetector(userId).getUserColor();
         message.setAddrPattern(OSCAddress_color);
         message.add(userId);
-        message.add(red(userColor));
-        message.add(green(userColor));
-        message.add(blue(userColor));
+        message.add(red(userColor) / 255);
+        message.add(green(userColor) / 255);
+        message.add(blue(userColor) / 255);
         oscP5.send(message, sendAddress);
         message.clear();
         for (int j = 0; j < nativeJoints.length; j++) {
