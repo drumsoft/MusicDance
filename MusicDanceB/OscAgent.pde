@@ -4,6 +4,8 @@ import SimpleOpenNI.*;
 
 class OscAgent {
   private static final String OSCAddress_skel = "skel";
+  private static final String OSCAddress_user = "user";
+  private static final String OSCAddress_color = "color";
   private static final String OSCAddress_new_user = "new_user";
   private static final String OSCAddress_calib_success = "calib_success";
   private static final String OSCAddress_lost_user = "lost_user";
@@ -11,7 +13,6 @@ class OscAgent {
   String[] maxJoints = {
     "head",
     "l_elbow",
-    "l_hand_tip",
     "l_foot",
     "l_hand",
     "l_hip",
@@ -19,7 +20,6 @@ class OscAgent {
     "l_shoulder",
     "neck",
     "r_elbow",
-    "r_hand_tip",
     "r_foot",
     "r_hand",
     "r_hip",
@@ -33,12 +33,13 @@ class OscAgent {
     "r_ankle",
     "r_thumb",
     "r_wrist",
-    "waist"
+    "waist",
+    "l_hand_tip",
+    "r_hand_tip"
   };
   int[] nativeJoints = {
     SimpleOpenNI.SKEL_HEAD,
     SimpleOpenNI.SKEL_LEFT_ELBOW,
-    SimpleOpenNI.SKEL_LEFT_FINGERTIP,
     SimpleOpenNI.SKEL_LEFT_FOOT,
     SimpleOpenNI.SKEL_LEFT_HAND,
     SimpleOpenNI.SKEL_LEFT_HIP,
@@ -46,7 +47,6 @@ class OscAgent {
     SimpleOpenNI.SKEL_LEFT_SHOULDER,
     SimpleOpenNI.SKEL_NECK,
     SimpleOpenNI.SKEL_RIGHT_ELBOW,
-    SimpleOpenNI.SKEL_RIGHT_FINGERTIP,
     SimpleOpenNI.SKEL_RIGHT_FOOT,
     SimpleOpenNI.SKEL_RIGHT_HAND,
     SimpleOpenNI.SKEL_RIGHT_HIP,
@@ -90,7 +90,6 @@ class OscAgent {
   void send(SimpleOpenNI context) {
     OscMessage message = new OscMessage(OSCAddress_skel);
     int userId = 0;
-    float[] bonePoints = new float[4];
     PVector point = new PVector();
     float confidence;
     
@@ -98,16 +97,33 @@ class OscAgent {
     for (int i = 0; i < userList.length; i++) {
       userId = userList[i];
       if(context.isTrackingSkeleton(userId)) {
+        if (context.getCoM(userId, point)) {
+          message.setAddrPattern(OSCAddress_user);
+          message.add(userId);
+          message.add(point.x);
+          message.add(point.y);
+          message.add(point.z);
+          message.add(0);
+          oscP5.send(message, sendAddress);
+          message.clear();
+        }
+        color userColor = getBpmDetector(userId).getUserColor();
+        message.setAddrPattern(OSCAddress_color);
+        message.add(userId);
+        message.add(red(userColor));
+        message.add(green(userColor));
+        message.add(blue(userColor));
+        oscP5.send(message, sendAddress);
+        message.clear();
         for (int j = 0; j < nativeJoints.length; j++) {
           message.setAddrPattern(OSCAddress_skel);
           message.add(userId);
           message.add(maxJointFromNativeJoint[nativeJoints[j]]);
           confidence = context.getJointPositionSkeleton(userId, nativeJoints[j], point);
-          bonePoints[0] = point.x;
-          bonePoints[1] = point.y;
-          bonePoints[2] = point.z;
-          bonePoints[3] = confidence;
-          message.add(bonePoints);
+          message.add(point.x);
+          message.add(point.y);
+          message.add(point.z);
+          message.add(confidence);
           oscP5.send(message, sendAddress);
           message.clear();
         }

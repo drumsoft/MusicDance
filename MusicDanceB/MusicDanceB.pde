@@ -16,7 +16,7 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
-static final int run_mode = MODE_PLAYBACK;
+static final int run_mode = MODE_DEMO;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
@@ -71,7 +71,14 @@ void setup()
       break;
   }
   if(context.isInit() == false) {
-     println(" * * * Can't init SimpleOpenNI, maybe the camera is not connected! * * *"); 
+    println(" * * * Can't init SimpleOpenNI, maybe the camera is not connected! * * *");
+    switch (run_mode) {
+      case MODE_DEMO:
+      case MODE_RECORD:
+        exit();
+      case MODE_PLAYBACK:
+      case MODE_PLAYBACK_STILL:
+    }
   }
   
   initMusicDanceSystem();
