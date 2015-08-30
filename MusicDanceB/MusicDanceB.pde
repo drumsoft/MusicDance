@@ -74,7 +74,14 @@ void setup()
       break;
   }
   if(context.isInit() == false) {
-     println(" * * * Can't init SimpleOpenNI, maybe the camera is not connected! * * *"); 
+    println(" * * * Can't init SimpleOpenNI, maybe the camera is not connected! * * *");
+    switch (run_mode) {
+      case MODE_DEMO:
+      case MODE_RECORD:
+        exit();
+      case MODE_PLAYBACK:
+      case MODE_PLAYBACK_STILL:
+    }
   }
   
   initMusicDanceSystem();
