@@ -190,9 +190,9 @@ void draw()
   {
     if(context.isTrackingSkeleton(userList[i])) {
       drawSkeleton(userList[i]);
-      BPMDetector bpmDetector = getBpmDetector(userList[i]);
-      bpmDetector.fetchPositionData(getTime());
-      bpmDetector.updateVisual();
+      Dancer dancer = getDancer(userList[i]);
+      dancer.fetchPositionData(getTime());
+      dancer.updateVisual();
       HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
       hmDetector.update();
       BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
@@ -424,7 +424,7 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 // -----------------------------------------
 
 int [][] armsDetectionParts;
-HashMap<Integer, BPMDetector> bpmDetectors;
+HashMap<Integer, Dancer> dancers;
 HashMap<Integer, HandsUpMoveDetector> handsUpDetectors;
 HashMap<Integer, BodyMoveDetector> bodyMoveDetectors;
 long systemStartedTime;
@@ -449,7 +449,7 @@ void initMusicDanceSystem() {
   armsDetectionParts[3][0] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
   armsDetectionParts[3][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
   
-  bpmDetectors = new HashMap<Integer, BPMDetector>();
+  dancers = new HashMap<Integer, Dancer>();
   handsUpDetectors = new HashMap<Integer, HandsUpMoveDetector>();
   bodyMoveDetectors = new HashMap<Integer, BodyMoveDetector>();
   systemStartedTime = System.currentTimeMillis();
@@ -457,9 +457,9 @@ void initMusicDanceSystem() {
 }
 
 void startBpmDetecting(int userId) {
-  BPMDetector bpmDetector = new BPMDetector(userId, context, this, getTime());
-  bpmDetectors.put(new Integer(userId), bpmDetector);
-  bpmDetector.initVisual(userClr[ (userId - 1) % userClr.length ]);
+  Dancer dancer = new Dancer(userId, context, this, getTime());
+  dancers.put(new Integer(userId), dancer);
+  dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
   setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
   
   HandsUpMoveDetector hmDetector = new HandsUpMoveDetector(userId, context, this);
@@ -471,8 +471,8 @@ void startBpmDetecting(int userId) {
   bodyMoveDetectors.put(new Integer(userId), bmDetector);
 }
 
-BPMDetector getBpmDetector(int userId) {
-  return bpmDetectors.get(new Integer(userId));
+Dancer getDancer(int userId) {
+  return dancers.get(new Integer(userId));
 }
 
 HandsUpMoveDetector getHandsUpMoveDetector(int userId) {
@@ -484,13 +484,13 @@ BodyMoveDetector getBodyMoveDetector(int userId) {
 }
 
 void stopBpmDetecting(int userId) {
-  bpmDetectors.remove(new Integer(userId));
+  dancers.remove(new Integer(userId));
   handsUpDetectors.remove(new Integer(userId));
   bodyMoveDetectors.remove(new Integer(userId));
 }
 
 // タップのコールバック
-void tapped(int userId, BPMDetector detector) {
+void tapped(int userId, Dancer detector) {
   //println("ID: " + userId + ",  Beats: " + Math.round(60/detector.getBeats()) + ",  Power: " + Math.round(detector.getPower()));
   // プライマリダンサーかどうか調べる
   // プライマリダンサーでない場合は無視する
@@ -547,11 +547,11 @@ void songChanged() {
 // ----------------------
 
 void setupGraph(int userId, float y) {
-  getBpmDetector(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
+  getDancer(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
 }
 
 void addDataToGraph(int userId, int series, float y) {
-  getBpmDetector(userId).graph.addValue(series, y);
+  getDancer(userId).graph.addValue(series, y);
 }
 void drawGraphs() {
   camera();
@@ -559,7 +559,7 @@ void drawGraphs() {
   int[] userList = context.getUsers();
   for(int i=0;i<userList.length;i++) {
     if(context.isTrackingSkeleton(userList[i])) {
-      getBpmDetector(userList[i]).graph.draw();
+      getDancer(userList[i]).graph.draw();
     }
   }
 }

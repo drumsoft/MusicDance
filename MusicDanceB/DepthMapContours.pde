@@ -91,7 +91,7 @@ class DepthMapContours extends DepthMapVisualizer {
               stroke(100);
               strokeWeight(1);
             } else {
-              BPMDetector bpmd = _main.getBpmDetector(user);
+              Dancer bpmd = _main.getDancer(user);
               if (bpmd != null) {
                 stroke(bpmd.getUserColor());
               } else {

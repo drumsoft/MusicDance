@@ -17,7 +17,7 @@ class DepthMapPointCloud extends DepthMapVisualizer {
             fill(100);
             radiusPlus = 0;
           } else {
-            BPMDetector bpmd = _main.getBpmDetector(userMap[index]);
+            Dancer bpmd = _main.getDancer(userMap[index]);
             if (bpmd != null) {
               fill(bpmd.getUserColor());
               realWorldPoint = bpmd.movePoint(realWorldPoint);

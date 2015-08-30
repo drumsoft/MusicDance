@@ -2,7 +2,7 @@ import SimpleOpenNI.*;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-class BPMDetector {
+class Dancer {
   int movingAverageWidth = 3; // 位置の移動平均値
   float[] jointsSpeedAmp = { // 関節のスピードを amplify して量を揃える
     -1.0,
@@ -46,7 +46,7 @@ class BPMDetector {
   float result_secondsPerBeat = 0.5; // 現在検出しているビート(秒/ビート)
   float result_power; // 現在のパワー
   
-  BPMDetector(int uid, SimpleOpenNI c, MusicDanceB a_controller, float currentTime) {
+  Dancer(int uid, SimpleOpenNI c, MusicDanceB a_controller, float currentTime) {
     int i;
     userId = uid;
     context = c;
