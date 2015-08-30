@@ -6,6 +6,8 @@
 import SimpleOpenNI.*;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 static final String oscSendHost = "127.0.0.1";
 static final int oscSendPort = 7771;
@@ -52,6 +54,11 @@ DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
 int visualizerIndex = 0;
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
+
+Timer launchCheckTimer;
+LaunchChecker launchChecker;
+int frameCounter = 0;
+float frameCountStart = 0;
 
 void setup()
 {
@@ -121,6 +128,10 @@ void setup()
   
   sound = new SoundPlayer(this);
   sound.start();
+  
+  launchCheckTimer = new Timer();
+  launchChecker = new LaunchChecker();
+  launchCheckTimer.schedule(launchChecker, 1000);
 }
 
 void drawDepthImageMap() {
@@ -526,4 +537,38 @@ void keyTyped() {
 
 void songChanged() {
   visualizerIndex = (visualizerIndex + 1) % depthMapVisualizer.length;
+}
+
+// ----------------------
+
+void setupGraph(int userId, float y) {
+  getBpmDetector(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
+}
+
+void addDataToGraph(int userId, int series, float y) {
+  getBpmDetector(userId).graph.addValue(series, y);
+}
+void drawGraphs() {
+  camera();
+  hint(DISABLE_DEPTH_TEST);
+  int[] userList = context.getUsers();
+  for(int i=0;i<userList.length;i++) {
+    if(context.isTrackingSkeleton(userList[i])) {
+      getBpmDetector(userList[i]).graph.draw();
+    }
+  }
+}
+
+class LaunchChecker extends TimerTask {
+    public LaunchChecker() {
+    }
+    public void run() {
+        if (frameCounter == 0 && frameCountStart == 0) {
+          println("LaunchCheck failed (no draw() completed).");
+          exit();
+          Runtime.getRuntime().halt(-1);
+        } else {
+          println("LaunchCheck passed.");
+        }
+    }
 }
