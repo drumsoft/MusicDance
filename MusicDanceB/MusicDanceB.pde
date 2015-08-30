@@ -6,6 +6,8 @@
 import SimpleOpenNI.*;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 static final String oscSendHost = "127.0.0.1";
 static final int oscSendPort = 7771;
@@ -55,6 +57,11 @@ DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
 int visualizerIndex = 1;
 
 float uiDisplayLeft, uiDisplayTop, uiDisplayWidth, uiDisplayHeight, uiDisplayZ;
+
+Timer launchCheckTimer;
+LaunchChecker launchChecker;
+int frameCounter = 0;
+float frameCountStart = 0;
 
 void setup()
 {
@@ -125,8 +132,9 @@ void setup()
   sound = new SoundPlayer(this);
   sound.start();
   
-  //updateTime();
-  //println("setup ended time: " + String.valueOf(getTime()));
+  launchCheckTimer = new Timer();
+  launchChecker = new LaunchChecker();
+  launchCheckTimer.schedule(launchChecker, 1000);
 }
 
 void drawDepthImageMap() {
@@ -155,11 +163,8 @@ void moveCamera() {
 void draw()
 {
   updateTime();
-  //println("draw time: " + String.valueOf(getTime()));
   // update the cam
   context.update();
-  //updateTime();
-  //println("draw 2 time: " + String.valueOf(getTime()));
   
   background(0,0,0);
   //drawDepthImageMap();
@@ -251,9 +256,6 @@ void draw()
     frameCounter = 0;
   }
 }
-
-int frameCounter = 0;
-float frameCountStart = 0;
 
 // 軸は X(右) Y(上) Z(奥) が正方向, Z軸座標未指定時は z=1 の面に描画
 // この時 x, y, は [-width * 0.18, width * 0.18] に
@@ -560,4 +562,18 @@ void drawGraphs() {
       getBpmDetector(userList[i]).graph.draw();
     }
   }
+}
+
+class LaunchChecker extends TimerTask {
+    public LaunchChecker() {
+    }
+    public void run() {
+        if (frameCounter == 0 && frameCountStart == 0) {
+          println("LaunchCheck failed (no draw() completed).");
+          exit();
+          Runtime.getRuntime().halt(-1);
+        } else {
+          println("LaunchCheck passed.");
+        }
+    }
 }
