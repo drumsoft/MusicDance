@@ -4,14 +4,14 @@ class MoveFilterAverage extends MoveFilterBase {
   float sum;
   int index;
   
-  MoveFilterAverage(int samplesNumber) {
+  MoveFilterAverage(int samplesNumber, float initialValue) {
     super();
     samples = samplesNumber;
     history = new float[samples];
     for (int i = 0; i < samples; i++) {
-      history[i] = 0;
+      history[i] = initialValue;
+      sum += initialValue;
     }
-    sum = 0;
     index = 0;
   }
   

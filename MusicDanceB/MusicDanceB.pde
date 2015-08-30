@@ -21,6 +21,9 @@ static final int run_mode = MODE_DEMO;
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
 
+static final int graph_series = 5;
+static final int[] graph_series_colors = {#0000FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
+
 SimpleOpenNI context;
 SoundPlayer sound;
 OscAgent osc;
@@ -114,6 +117,9 @@ void setup()
   
   sound = new SoundPlayer(this);
   sound.start();
+  
+  //updateTime();
+  //println("setup ended time: " + String.valueOf(getTime()));
 }
 
 void drawDepthImageMap() {
@@ -142,8 +148,11 @@ void moveCamera() {
 void draw()
 {
   updateTime();
+  //println("draw time: " + String.valueOf(getTime()));
   // update the cam
   context.update();
+  //updateTime();
+  //println("draw 2 time: " + String.valueOf(getTime()));
   
   background(0,0,0);
   //drawDepthImageMap();
@@ -529,8 +538,9 @@ void songChanged() {
 // ----------------------
 
 void setupGraph(int userId, float y) {
-  getBpmDetector(userId).graph = new DebugGraph(y, 3, new int[]{#FFCC00,#FF00CC,#00ccFF});
+  getBpmDetector(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
 }
+
 void addDataToGraph(int userId, int series, float y) {
   getBpmDetector(userId).graph.addValue(series, y);
 }

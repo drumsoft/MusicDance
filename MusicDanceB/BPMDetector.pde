@@ -66,6 +66,11 @@ class BPMDetector {
   MoveFilterBase t1s = new MoveFilterSpeed(0);
   CycleFounder cf1 = new CycleFounderShift(8, 30, 60);
   CycleFounder cf2 = new CycleFounderFFT(64, 26);
+  CycleFounder cf3 = new CycleFounderThreshold(0.1, -0.25);
+  MoveFilterBase tfMC = new MoveFilterMultipleCorrect(13, 1.5, 10);
+  MoveFilterBase tfAvg = new MoveFilterAverage(15, 13);
+  MoveFilterBase tfAvg2 = new MoveFilterAverage(15, 13);
+  MoveFilterBase tfRng = new MoveFilterRange(13, 8, 30);
   float clipping = 1.0;
   
   void fetchPositionData(float currentTime) {
@@ -73,8 +78,19 @@ class BPMDetector {
     PVector p = new PVector();
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
     float speed = t1f.input(t1s.input(p.y, currentTime), currentTime);
-    addDataToGraph(userId, 0, speed / 25); // yello
-    addDataToGraph(userId, 1, cf2.input(speed)); // cyan
+    addDataToGraph(userId, 0, speed / 25); // blue
+    float cycle1 = cf3.input(speed);
+    float cycle2 = tfRng.input(cycle1, currentTime);
+    float cycle31 = tfMC.input(cycle2, currentTime);
+    float cycle41 = tfAvg.input(cycle31, currentTime);
+    float cycle42 = tfAvg2.input(cycle2, currentTime);
+    ((MoveFilterMultipleCorrect)tfMC).feedback(cycle41);
+    addDataToGraph(userId, 1, cycle1); // red
+    //addDataToGraph(userId, 2, cycle2); // purple
+    //addDataToGraph(userId, 3, cycle3); // green
+    addDataToGraph(userId, 3, cycle41); // green
+    addDataToGraph(userId, 4, cycle42); // cyan
+    /*
     if (speed > clipping) {
       speed = clipping;
     } else if (speed < -clipping) {
@@ -84,6 +100,7 @@ class BPMDetector {
     float cycle = cf1.input(speed);
     addDataToGraph(userId, 2, cycle); // cyan
     //println("BPM: " + String.valueOf(60 * 29 / cycle));
+    */
     
     boolean isTapped = false;
     for (int i = 0; i < speedometers.length; i++) {
