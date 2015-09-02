@@ -250,6 +250,14 @@ void draw()
   }
 
   osc.send(context);
+  
+  frameCounter++;
+  if (frameCounter == 100) {
+    float currentTime = getTime();
+    println("FPS: " + (new Float(frameCounter / (currentTime - frameCountStart))).toString());
+    frameCountStart = currentTime;
+    frameCounter = 0;
+  }
 }
 
 // 軸は X(右) Y(上) Z(奥) が正方向, Z軸座標未指定時は z=1 の面に描画
@@ -540,24 +548,6 @@ void songChanged() {
 }
 
 // ----------------------
-
-void setupGraph(int userId, float y) {
-  getBpmDetector(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
-}
-
-void addDataToGraph(int userId, int series, float y) {
-  getBpmDetector(userId).graph.addValue(series, y);
-}
-void drawGraphs() {
-  camera();
-  hint(DISABLE_DEPTH_TEST);
-  int[] userList = context.getUsers();
-  for(int i=0;i<userList.length;i++) {
-    if(context.isTrackingSkeleton(userList[i])) {
-      getBpmDetector(userList[i]).graph.draw();
-    }
-  }
-}
 
 class LaunchChecker extends TimerTask {
     public LaunchChecker() {
