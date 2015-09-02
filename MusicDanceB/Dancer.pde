@@ -32,9 +32,9 @@ class Dancer {
     weight = 0;
     
     fSpeed = new MoveFilterSpeed(getTime());
-    fLPF = new MoveFilterLPF(5, 1, 27);;
-    cf = new CycleFounderThreshold(0.1, -0.25, getTime());
-    fRng = new MoveFilterRange(120/200, 60/200, 60/60);
+    fLPF = new MoveFilterLPF(3.8, 1, 28);;
+    cf = new CycleFounderThreshold(25, -36, getTime());
+    fRng = new MoveFilterRange(60/120, 60/190, 60/60);
     fMC = new MoveFilterMultipleCorrect(0.5, 1.5, 10);
     fAvg = new MoveFilterAverage(15, 0.5);
   }
@@ -49,17 +49,19 @@ class Dancer {
   void update(float currentTime) {
     PVector p = new PVector();
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
-    float speed = fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
+    float speed = -fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
     boolean isUpdated = cf.input(speed, currentTime);
-    cycle = fAvg.input(fMC.input(fRng.input(cf.value(), currentTime), currentTime), currentTime);
+    cycle = fMC.input(fRng.input(cf.value(), currentTime), currentTime);
+    fAvg.input(cycle, currentTime);
     
-    fMC.feedback(cycle);
+    fMC.feedback(60 / sound.currentBPM);
     
-    addDataToGraph(userId, 0, speed / 25); // blue
-    addDataToGraph(userId, 1, cf.value() * 30); // red
-    addDataToGraph(userId, 2, fRng.value() * 30);
-    addDataToGraph(userId, 3, fMC.value() * 30);
-    addDataToGraph(userId, 4, cycle * 30);
+    addDataToGraph(userId, 0, 0.5 * speed); // blue
+    addDataToGraph(userId, 1, cf.value() * 300); // red
+    addDataToGraph(userId, 2, fRng.value() * 300);
+    addDataToGraph(userId, 3, fMC.value() * 300);
+    addDataToGraph(userId, 4, fAvg.value() * 300);
+    addDataToGraph(userId, 5, 300 * 60 / sound.currentBPM);
     
     if (isUpdated) {
       previousBeatTime = currentTime;

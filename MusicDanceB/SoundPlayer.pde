@@ -7,8 +7,10 @@ class SoundPlayer extends Bead {
   float bpmCapacityMin = 80;
   double originalLength = 15.610;
   double positionOffsetToFirstBeat = 166; // 最初のビート位置へのオフセット
-  float bpmAdjustingForBeatSlip = 3; // ビートとタップのずれ1に対して、補正をどれだけ(BPMで)かけるか
+  float beatsToFollowBpm = 4;
   float currentBPM;
+  float currentTime;
+  float startTime, endTime, startBpm, endBpm;
   float previousTapEvent;
   String[] soundFiles = { // サウンドファイルの一覧
     "m1-A.wav",
@@ -52,7 +54,7 @@ class SoundPlayer extends Bead {
   int lowTensionPartLimit = 4; // ローテンションのパートが この回数続いたら曲を変更
   int nonTapLimit = 6; // タップなしの状態がこの秒数続いたら曲を変更
   
-  Glide speedGlide;
+  Static playbackSpeed;
   float tension, handsUpFactor;
   int lowTensionPartCount = 0;
   boolean songChangeBreakPlayed = false;
@@ -65,12 +67,16 @@ class SoundPlayer extends Bead {
   SoundPlayer(MusicDanceB md) {
     main = md;
     currentBPM = originalBPM;
+    startTime = 0;
+    endTime = 0.01;
+    startBpm = originalBPM;
+    endBpm = originalBPM;
     
     ac = new AudioContext();
-    masterGain = new Gain(ac, 1, 0.0);
+    masterGain = new Gain(ac, 1, 1.0);
     ac.out.addInput(masterGain);
     
-    speedGlide = new Glide(ac, 1.0, 2000);
+    playbackSpeed = new Static(ac, 1.0);
     
     players = new SamplePlayer[soundFiles.length];
     
@@ -89,16 +95,32 @@ class SoundPlayer extends Bead {
   }
   
   void changeBPM(float bpm, float phase) {
+    if (currentBPM != bpm) {
+      float targetTimeMinutes = beatsToFollowBpm * 2 / (currentBPM + bpm); // beatsToFollowBpm beats for averaged bpm
+      float halfBpmDiff = (bpm - currentBPM) / 2;
+      float phaseDiff = halfBpmDiff * targetTimeMinutes + (phase - getPhase());
+      float phaseAdjust = Math.round(phaseDiff) - phaseDiff;
+      endTime = currentTime + (targetTimeMinutes + phaseAdjust / halfBpmDiff) * 60;
+      startTime = currentTime;
+      startBpm = currentBPM;
+      endBpm = bpm;
+    }
   }
   
-  void tapBeat(float bpm) {
-    if (bpm < bpmCapacityMin || bpmCapacityMax < bpm) {
-      return;
+  void update(float time) {
+    currentTime = time;
+    if (currentTime < endTime) {
+      float elapsedRate = (currentTime - startTime) / (endTime - startTime);
+      currentBPM = startBpm * (1 - elapsedRate) + endBpm * elapsedRate;
+      playbackSpeed.setValue(currentBPM / originalBPM);
+    } else if (currentBPM != endBpm) {
+      currentBPM = endBpm;
+      playbackSpeed.setValue(currentBPM / originalBPM);
     }
-    currentBPM = bpm;
-    speedGlide.setValue((currentBPM + (float)(getPhase() * bpmAdjustingForBeatSlip)) / originalBPM);
-    previousTapEvent = getTime();
-    
+  }
+  
+  // TODO: adjust volume by population and tension.
+  void userStatus(float bpm) {
     if (fadeInVolume < 0.9) {
       fadeInVolume += 1.0 / 16.0;
       masterGain.setGain(Math.max(0.0, Math.min(1.0, fadeInVolume)));
@@ -132,9 +154,9 @@ class SoundPlayer extends Bead {
   // --------------------------------------------------------
   
   // phase = [0〜1) (mod 1) ビートの開始ポイントを 0 とする
-  double getPhase() {
+  float getPhase() {
     double position = playingSong != null ? playingSong.getPosition() : 0;
-    return (originalBPM * (position - positionOffsetToFirstBeat) / 60000) % 1;
+    return (float)(originalBPM * (position - positionOffsetToFirstBeat) / 60000) % 1;
   }
   
   // サウンドをロードしてループ設定を行う
@@ -144,7 +166,7 @@ class SoundPlayer extends Bead {
     players[i].setKillOnEnd(false);
     //players[i].setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
     //players[i].setLoopPointsFraction(0, 1);
-    players[i].setRate(speedGlide);
+    players[i].setRate(playbackSpeed);
   }
   
   // 曲を変更する

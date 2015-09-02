@@ -3,8 +3,8 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 class DebugGraph {
-  float constLine = 1.0;
-  float displayZoomY = 10.0;
+  float constLine = 25.0;
+  float displayZoomY = 1.0;
   int samples = 90;
   
   float base_y, additional_y;

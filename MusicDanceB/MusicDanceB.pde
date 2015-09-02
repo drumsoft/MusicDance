@@ -18,12 +18,12 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
-static final int run_mode = MODE_PLAYBACK;
+static final int run_mode = MODE_DEMO;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
 
-static final int graph_series = 5;
+static final int graph_series = 6;
 static final int[] graph_series_colors = {#7777FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
 
 SimpleOpenNI context;
@@ -249,6 +249,8 @@ void draw()
     }
     */
   }
+  
+  sound.update(getTime());
   if (weightSum > 0) {
     sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase());
   }
