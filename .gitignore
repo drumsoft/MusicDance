@@ -1,3 +1,5 @@
 depthMap*.json
 *.oni
 temp*
+.previous_error
+output
