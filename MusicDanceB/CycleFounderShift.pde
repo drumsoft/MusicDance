@@ -32,7 +32,7 @@ class CycleFounderShift extends CycleFounder {
     return samples[index];
   }
   
-  float input(float current) {
+  boolean input(float current, float currentTime) {
     // update sums and find maximum
     int minIndex = -1;
     float minSum = 0;
@@ -62,6 +62,12 @@ class CycleFounderShift extends CycleFounder {
     samples[cur] = current;
     cur = (cur + 1) % numOfSamples;
     
-    return cycle;
+    if (cycle != value) {
+      updated = true;
+    } else {
+      updated = false;
+    }
+    value = cycle;
+    return updated;
   }
 }

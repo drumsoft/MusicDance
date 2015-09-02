@@ -12,11 +12,11 @@ class DepthMapMeshedWires extends DepthMapVisualizer {
         stroke(100);
         strokeWeight(1);
       } else {
-        Dancer bpmd = _main.getDancer(userMap[from]);
-        if (bpmd != null) {
-          stroke(bpmd.getUserColor());
-          fromRealPoint = bpmd.movePoint(fromRealPoint);
-          toRealPoint = bpmd.movePoint(toRealPoint);
+        Dancer dancer = _main.getDancer(userMap[from]);
+        if (dancer != null) {
+          stroke(dancer.getUserColor());
+          fromRealPoint = dancer.movePoint(fromRealPoint);
+          toRealPoint = dancer.movePoint(toRealPoint);
         } else {
           stroke(userClr[userMap[from] % userClr.length]);
         }

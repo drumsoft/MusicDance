@@ -17,9 +17,9 @@ class CycleFounderFFT extends CycleFounder {
     cur = 0;
   }
   
-  float input(float current) {
+  boolean input(float current, float currentTime) {
     buffer[cur++] = current;
-    if (cur < size) return cycle;
+    if (cur < size) return false;
     cur = 0;
     
     fft.forward(buffer);
@@ -38,6 +38,13 @@ class CycleFounderFFT extends CycleFounder {
 //    println(hist);
     
     cycle = 26 / fft.indexToFreq(maxIndex);
-    return cycle;
+    
+    if (cycle != value) {
+      updated = true;
+    } else {
+      updated = false;
+    }
+    value = cycle;
+    return updated;
   }
 }

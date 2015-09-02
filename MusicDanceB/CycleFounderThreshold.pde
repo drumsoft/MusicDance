@@ -1,33 +1,28 @@
 class CycleFounderThreshold extends CycleFounder {
   float upperThreshold;
   float lowerThreshold;
-  float previous;
+  float previous, previousTime;
   boolean isReady;
   
-  int count;
-  int previousCount;
-  float cycle;
-  
-  CycleFounderThreshold(float upperThreshold, float lowerThreshold) {
+  CycleFounderThreshold(float upperThreshold, float lowerThreshold, float currentTime) {
     this.upperThreshold = upperThreshold;
     this.lowerThreshold = lowerThreshold;
     previous = 0;
     isReady = true;
-    count = 0;
-    previousCount = 0;
-    cycle = 0;
+    previousTime = currentTime;
   }
   
-  float input(float current) {
+  boolean input(float current, float currentTime) {
+    updated = false;
     if (isReady && previous <= upperThreshold && upperThreshold < current) {
-      cycle = count - previousCount;
-      previousCount = count;
+      value = currentTime - previousTime;
+      previousTime = currentTime;
       isReady = false;
+      updated = true;
     } else if (!isReady && previous >= lowerThreshold && lowerThreshold > current ) {
       isReady = true;
     }
     previous = current;
-    count++;
-    return cycle;
+    return updated;
   }
 }

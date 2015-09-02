@@ -18,13 +18,13 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
-static final int run_mode = MODE_DEMO;
+static final int run_mode = MODE_PLAYBACK;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
 
 static final int graph_series = 5;
-static final int[] graph_series_colors = {#0000FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
+static final int[] graph_series_colors = {#7777FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
 
 SimpleOpenNI context;
 SoundPlayer sound;
@@ -85,7 +85,7 @@ void setup()
     switch (run_mode) {
       case MODE_DEMO:
       case MODE_RECORD:
-        exit();
+        shutdown();
       case MODE_PLAYBACK:
       case MODE_PLAYBACK_STILL:
     }
@@ -496,7 +496,7 @@ void tapped(int userId, Dancer detector) {
   // プライマリダンサーでない場合は無視する
   // プライマリダンサーによるタップの場合、サウンドプレイヤーにタップを送る
   
-  sound.tapBeat((float)60 / detector.getBeats());
+  sound.tapBeat((float)60 / detector.getCycle());
 }
 
 // キー入力のハンドラ(ユーティリティ的な)
@@ -544,7 +544,7 @@ void songChanged() {
   visualizerIndex = (visualizerIndex + 1) % depthMapVisualizer.length;
 }
 
-// ----------------------
+// ---------------------- graph
 
 void setupGraph(int userId, float y) {
   getDancer(userId).graph = new DebugGraph(y, graph_series, graph_series_colors);
@@ -564,14 +564,20 @@ void drawGraphs() {
   }
 }
 
+// ----------------------
+
+void shutdown() {
+  exit();
+  Runtime.getRuntime().halt(-1);
+}
+
 class LaunchChecker extends TimerTask {
     public LaunchChecker() {
     }
     public void run() {
         if (frameCounter == 0 && frameCountStart == 0) {
           println("LaunchCheck failed (no draw() completed).");
-          exit();
-          Runtime.getRuntime().halt(-1);
+          shutdown();
         } else {
           println("LaunchCheck passed.");
         }

@@ -20,10 +20,10 @@ class DepthMapCubes extends DepthMapVisualizer {
             fill(100);
             radiusPlus = 0;
           } else {
-            Dancer bpmd = _main.getDancer(userMap[index]);
-            if (bpmd != null) {
-              fill(bpmd.getUserColor());
-              realWorldPoint = bpmd.movePoint(realWorldPoint);
+            Dancer dancer = _main.getDancer(userMap[index]);
+            if (dancer != null) {
+              fill(dancer.getUserColor());
+              realWorldPoint = dancer.movePoint(realWorldPoint);
             } else {
               fill(userClr[userMap[index] % userClr.length]);
             }

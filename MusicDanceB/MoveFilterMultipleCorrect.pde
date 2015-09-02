@@ -1,5 +1,4 @@
 class MoveFilterMultipleCorrect extends MoveFilterBase {
-  float value;
   float base;
   float min, max;
   int limit;
