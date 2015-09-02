@@ -21,6 +21,7 @@ class Dancer {
   float cycle;
   float weight;
   float previousBeatTime;
+  float phase;
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
     this.userId = userId;
@@ -45,7 +46,7 @@ class Dancer {
   MoveFilterMultipleCorrect fMC;
   MoveFilterAverage fAvg;
   
-  void fetchPositionData(float currentTime) {
+  void update(float currentTime) {
     PVector p = new PVector();
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
     float speed = fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
@@ -64,7 +65,9 @@ class Dancer {
       previousBeatTime = currentTime;
       weight += 0.1;
       if (weight > 1.0) weight = 1.0;
-      controller.tapped(userId, this);
+      phase = 0;
+    } else {
+      phase = ((getTime() - previousBeatTime) / cycle) % 1;
     }
   }
   
@@ -73,6 +76,10 @@ class Dancer {
   // cycle(seconds/beat)
   float getCycle() {
     return cycle;
+  }
+  
+  float getPhase() {
+    return phase;
   }
   
   float getWeight() {

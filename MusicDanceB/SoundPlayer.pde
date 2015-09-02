@@ -88,12 +88,15 @@ class SoundPlayer extends Bead {
     ac.stop();
   }
   
+  void changeBPM(float bpm, float phase) {
+  }
+  
   void tapBeat(float bpm) {
     if (bpm < bpmCapacityMin || bpmCapacityMax < bpm) {
       return;
     }
     currentBPM = bpm;
-    speedGlide.setValue((currentBPM + (float)(beatSlipping() * bpmAdjustingForBeatSlip)) / originalBPM);
+    speedGlide.setValue((currentBPM + (float)(getPhase() * bpmAdjustingForBeatSlip)) / originalBPM);
     previousTapEvent = getTime();
     
     if (fadeInVolume < 0.9) {
@@ -128,15 +131,10 @@ class SoundPlayer extends Bead {
   
   // --------------------------------------------------------
   
-  // 現在の再生タイミングが、ジャストなビート位置からいかほどずれているかを返す
-  // 返却値は [-0.5,0.5) の範囲で 0 の時ジャスト、 -0.5 の時は半拍遅れている。
-  double beatSlipping() {
-    double position = 0;
-    if (playingSong != null) {
-      position = playingSong.getPosition();
-    }
-    double beat = originalBPM * (position - positionOffsetToFirstBeat) / 60000;
-    return beat - Math.round(beat);
+  // phase = [0〜1) (mod 1) ビートの開始ポイントを 0 とする
+  double getPhase() {
+    double position = playingSong != null ? playingSong.getPosition() : 0;
+    return (originalBPM * (position - positionOffsetToFirstBeat) / 60000) % 1;
   }
   
   // サウンドをロードしてループ設定を行う

@@ -183,6 +183,8 @@ void draw()
   depthMapVisualizer[visualizerIndex].draw(context.depthMap(), context.depthMapRealWorld(), context.userMap());
   
   float movingScore = 0, handsUpScore = 0;
+  float cycleSum = 0, weightSum = 0, maxWeight = 0;
+  Dancer topDancer = null;
   
   // draw the skeleton if its available
   int[] userList = context.getUsers();
@@ -190,11 +192,21 @@ void draw()
   {
     if(context.isTrackingSkeleton(userList[i])) {
       drawSkeleton(userList[i]);
+      
       Dancer dancer = getDancer(userList[i]);
-      dancer.fetchPositionData(getTime());
+      dancer.update(getTime());
       dancer.updateVisual();
+      float cycle = dancer.getCycle(), weight = dancer.getWeight();
+      cycleSum += cycle * weight;
+      weightSum += weight;
+      if (maxWeight < weight) {
+        topDancer = dancer;
+        maxWeight = weight;
+      }
+      
       HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
       hmDetector.update();
+      
       BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
       bmDetector.updateWithTime(getTime());
       
@@ -236,6 +248,9 @@ void draw()
       }
     }
     */
+  }
+  if (weightSum > 0) {
+    sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase());
   }
   
   if (movingScore  > 0)  sound.setMoving(movingScore);
@@ -487,16 +502,6 @@ void stopBpmDetecting(int userId) {
   dancers.remove(new Integer(userId));
   handsUpDetectors.remove(new Integer(userId));
   bodyMoveDetectors.remove(new Integer(userId));
-}
-
-// タップのコールバック
-void tapped(int userId, Dancer detector) {
-  //println("ID: " + userId + ",  Beats: " + Math.round(60/detector.getBeats()) + ",  Power: " + Math.round(detector.getPower()));
-  // プライマリダンサーかどうか調べる
-  // プライマリダンサーでない場合は無視する
-  // プライマリダンサーによるタップの場合、サウンドプレイヤーにタップを送る
-  
-  sound.tapBeat((float)60 / detector.getCycle());
 }
 
 // キー入力のハンドラ(ユーティリティ的な)
