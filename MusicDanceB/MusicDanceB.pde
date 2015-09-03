@@ -9,16 +9,10 @@ import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 
-static final String oscSendHost = "127.0.0.1";
-static final int oscSendPort = 7771;
-static final int oscRecvPort = 7772;
-
 static final int MODE_DEMO = 0;
 static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
-
-static final int run_mode = MODE_PLAYBACK;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
@@ -26,9 +20,15 @@ static final String pathToStoreMovie = "SkeletonRec.oni";
 static final int graph_series = 6;
 static final int[] graph_series_colors = {#7777FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
 
+Preferences prefs;
 SimpleOpenNI context;
 SoundPlayer sound;
 OscAgent osc;
+
+String oscSendHost;
+int oscSendPort;
+int oscRecvPort;
+int run_mode;
 
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
@@ -66,6 +66,12 @@ float frameCountStart = 0;
 void setup()
 {
   size(1024,768,P3D);  // strange, get drawing error in the cameraFrustum if i use P3D, in opengl there is no problem
+  
+  prefs = new Preferences();
+  String oscSendHost = prefs.get("oscSendHost");
+  int oscSendPort = prefs.getInt("oscSendPort");
+  int oscRecvPort = prefs.getInt("oscRecvPort");
+  int run_mode = prefs.getInt("run_mode");
   
   switch (run_mode) {
     case MODE_DEMO:
