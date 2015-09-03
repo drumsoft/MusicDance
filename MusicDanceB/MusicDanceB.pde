@@ -18,7 +18,7 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
-static final int run_mode = MODE_DEMO;
+static final int run_mode = MODE_PLAYBACK;
 
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
@@ -179,6 +179,9 @@ void draw()
   translate(0,0,-cameraZ);  // set the rotation center of the scene 1000 infront of the camera
   rotateX(cameraRotX);
   rotateY(cameraRotY);
+  
+  // draw user from Max (Body Jockey)
+  osc.drawMaxUser();
   
   depthMapVisualizer[visualizerIndex].draw(context.depthMap(), context.depthMapRealWorld(), context.userMap());
   

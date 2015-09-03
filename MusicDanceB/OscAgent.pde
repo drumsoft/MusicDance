@@ -147,8 +147,32 @@ class OscAgent {
     oscP5.send(message, sendAddress);
   }
   
+  MaxUser maxUser = null;
+  
   void oscEvent(OscMessage theOscMessage) {
-    print("[osc] addrpattern: "+theOscMessage.addrPattern());
-    println(" typetag: "+theOscMessage.get(0).intValue());
+    if (theOscMessage.addrPattern().equals(OSCAddress_skel)) {
+      // ['skel', 'i',USER_ID, 's','SKEL_PART', 'f','X', 'f','Y', 'f','Z', 'f','CONFIDENCE']
+      int userId = theOscMessage.get(0).intValue();
+      if (maxUser != null && maxUser.life() <= 0) {
+          maxUser = null;
+      }
+      if (maxUser == null) {
+        maxUser = new MaxUser(userId);
+      }
+      if (maxUser.userId == userId) {
+        maxUser.setSkel(
+          theOscMessage.get(1).stringValue(),
+          theOscMessage.get(2).floatValue(),
+          theOscMessage.get(3).floatValue(),
+          theOscMessage.get(4).floatValue()
+        );
+      }
+    }
+  }
+  
+  void drawMaxUser() {
+    if (maxUser != null) {
+      maxUser.draw();
+    }
   }
 }
