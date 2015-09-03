@@ -24,11 +24,19 @@ foreach (@ARGV) {
     if (/(?:^|\:)(\d+)$/) {
       $port = $1;
     }
-  } elsif (-e $_) {
+  } elsif ($_) {
     $file = $_;
   }
 }
-
+if (! defined $file) {
+  print STDERR "usage: oscsend.pl [-l] [[127.0.0.1:]7772] file.log\n";
+  print STDERR "no file specified.\n";
+  exit(0);
+}
+if (! -e $file) {
+  print "file not exists: $file\n";
+  exit(-1);
+}
 
 my $start = time();
 
@@ -38,14 +46,12 @@ my $client =
 
 print STDERR "[oscsend] Sending out test messages to $host:$port\n";
 
-if ($file) {
-  open(STDIN, $file);
-}
-
 my $VAR1;
 
 while (1) {
-  while (<STDIN>) {
+  my $in;
+  open($in, $file);
+  while (<$in>) {
     chomp;
     my ($at, $dump) = split /\t/, $_, 2;
     if ($at =~ /^\d+$/ && $dump) {
@@ -62,17 +68,13 @@ while (1) {
       $client->send($VAR1);
     }
   }
+  close($in);
   if ($loop) {
-    seek(STDIN, 0, 0);
     $start = time();
     print STDERR "[oscsend] looping.\n";
   } else {
     last;
   }
-}
-
-if ($file) {
-  close(STDIN);
 }
 
 print STDERR "[oscsend] Send finished.\n";
