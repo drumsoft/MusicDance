@@ -5,13 +5,15 @@ class MoveFilterSpeed extends MoveFilterBase {
   MoveFilterSpeed(float time) {
     super();
     previous = 0;
-    previousTime = time;
+    previousTime = -1;
   }
   
   float input(float current, float time) {
-    float speed = (current - previous) / (time - previousTime);
+    if (time > previousTime && previousTime > 0) {
+      value = (current - previous) / (time - previousTime);
+    }
     previousTime = time;
     previous = current;
-    return speed;
+    return value;
   }
 }

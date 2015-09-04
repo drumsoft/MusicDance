@@ -582,6 +582,23 @@ void drawGraphs() {
 
 // ----------------------
 
+// display float values and labels
+// discloseValues(new String[]{"", ..}, new float[]{0.1,..});
+void discloseValues(String[] labels, float[] values) {
+  for (int i = 0; i < values.length; i++) {
+    if (labels != null && i < labels.length) {
+      print(labels[i] + ":");
+    }
+    print(String.valueOf(values[i]));
+    if (i < values.length - 1) {
+      print(", ");
+    }
+  }
+  println();
+}
+
+// ----------------------
+
 void shutdown() {
   exit();
   Runtime.getRuntime().halt(-1);

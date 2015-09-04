@@ -21,7 +21,7 @@ class DebugGraph {
     for (int i = 0; i < numOfSeries; i++) {
       yList[i] = new LinkedList<Float>();
       while (yList[i].size() < samples) {
-        yList[i].push(new Float(0));
+        yList[i].push(base_y);
       }
     }
     
@@ -43,13 +43,14 @@ class DebugGraph {
     
     for (int i = 0; i < yList.length; i++) {
       stroke(colors[i]);
-      float px = uiDisplayLeft + uiDisplayWidth, py = yList[i].getFirst();
+      float px = uiDisplayLeft + uiDisplayWidth;
+      float py = yList[i].getFirst() + i;
       int number, xIndex;
       number = xIndex = yList[i].size() - 1;
       ListIterator<Float> itr = yList[i].listIterator(0);
       while (itr.hasNext()) {
         float x = uiDisplayLeft + (uiDisplayWidth * xIndex / number);
-        float y = itr.next().intValue();
+        float y = itr.next().intValue() + i;
         line(px,py, x,y);
         px = x; py = y;
         xIndex--;

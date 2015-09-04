@@ -3,6 +3,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 class Dancer {
+  int pickupPosition = SimpleOpenNI.SKEL_NECK;
   /*
     頭    SKEL_HEAD -> 首
     首    SKEL_NECK -> 頭,両肩
@@ -30,13 +31,14 @@ class Dancer {
     
     cycle = 0.5;
     weight = 0;
+    float currentCycle = 60 / sound.currentBPM;
     
-    fSpeed = new MoveFilterSpeed(getTime());
-    fLPF = new MoveFilterLPF(3.8, 1, 28);;
-    cf = new CycleFounderThreshold(25, -36, getTime());
-    fRng = new MoveFilterRange(60/120, 60/190, 60/60);
-    fMC = new MoveFilterMultipleCorrect(0.5, 1.5, 10);
-    fAvg = new MoveFilterAverage(15, 0.5);
+    fSpeed = new MoveFilterSpeed(currentTime); // startValue, currentTime
+    fLPF = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
+    cf = new CycleFounderThreshold(25, -36, currentTime); // upperTh(speed), lowerTh, currentTime
+    fRng = new MoveFilterRange(currentCycle, 60.0/190.0, 60.0/60.0); // startValue(cycle), min, max
+    fMC = new MoveFilterMultipleCorrect(currentCycle, 1.5, 10); // startValue, threshold(current/previous), limit(samples)
+    fAvg = new MoveFilterAverage(15, currentCycle); // samplesNumber, startValue
   }
   
   MoveFilterSpeed fSpeed;
@@ -48,20 +50,20 @@ class Dancer {
   
   void update(float currentTime) {
     PVector p = new PVector();
-    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p);
+    context.getJointPositionSkeleton(userId, pickupPosition, p);
     float speed = -fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
     boolean isUpdated = cf.input(speed, currentTime);
     cycle = fMC.input(fRng.input(cf.value(), currentTime), currentTime);
     fAvg.input(cycle, currentTime);
     
-    fMC.feedback(60 / sound.currentBPM);
+    fMC.feedback(fAvg.value);
     
-    addDataToGraph(userId, 0, 0.5 * speed); // blue
-    addDataToGraph(userId, 1, cf.value() * 300); // red
-    addDataToGraph(userId, 2, fRng.value() * 300);
-    addDataToGraph(userId, 3, fMC.value() * 300);
-    addDataToGraph(userId, 4, fAvg.value() * 300);
-    addDataToGraph(userId, 5, 300 * 60 / sound.currentBPM);
+    addDataToGraph(userId, 0, 0.1 * speed); // blue
+    addDataToGraph(userId, 1, cf.value() * 200); // red
+    addDataToGraph(userId, 2, fRng.value() * 200);
+    addDataToGraph(userId, 3, fMC.value() * 200);
+    addDataToGraph(userId, 4, fAvg.value() * 200);
+    addDataToGraph(userId, 5, 200 * 60 / sound.currentBPM);
     
     if (isUpdated) {
       previousBeatTime = currentTime;

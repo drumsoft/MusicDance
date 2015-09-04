@@ -4,6 +4,8 @@ class MoveFilterRange extends MoveFilterBase {
   MoveFilterRange(float start, float min, float max) {
     this.min = min;
     this.max = max;
+    if (start < min) start = min;
+    if (start > max) start = max;
     this.value = start;
   }
   
