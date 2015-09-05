@@ -2,11 +2,7 @@ import SimpleOpenNI.*;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-static boolean[] dancersSlot = new boolean[6]; // (for max) BJ dancers slot.
-  
 class Dancer {
-  int slotNumber;
-  
   int pickupPosition = SimpleOpenNI.SKEL_NECK;
   /*
     頭    SKEL_HEAD -> 首
@@ -43,21 +39,6 @@ class Dancer {
     fRng = new MoveFilterRange(currentCycle, 60.0/190.0, 60.0/60.0); // startValue(cycle), min, max
     fMC = new MoveFilterMultipleCorrect(currentCycle, 1.5, 10); // startValue, threshold(current/previous), limit(samples)
     fAvg = new MoveFilterAverage(15, currentCycle); // samplesNumber, startValue
-    
-    slotNumber = -1;
-    for (int i = 0; i < dancersSlot.length; i++) {
-      if (!dancersSlot[i]) {
-        dancersSlot[i] = true;
-        slotNumber = i;
-      }
-    }
-  }
-  
-  void dispose() {
-    if (slotNumber >= 0) {
-      dancersSlot[slotNumber] = false;
-    }
-    slotNumber = -1;
   }
   
   MoveFilterSpeed fSpeed;

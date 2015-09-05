@@ -510,7 +510,6 @@ BodyMoveDetector getBodyMoveDetector(int userId) {
 }
 
 void stopBpmDetecting(int userId) {
-  getDancer(userId).dispose();
   dancers.remove(new Integer(userId));
   handsUpDetectors.remove(new Integer(userId));
   bodyMoveDetectors.remove(new Integer(userId));
