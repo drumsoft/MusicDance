@@ -401,8 +401,6 @@ void onNewUser(SimpleOpenNI curContext,int userId)
   context.startTrackingSkeleton(userId);
   
   startBpmDetecting(userId);
-  
-  osc.sendNewUser(userId);
 }
 
 void onLostUser(SimpleOpenNI curContext,int userId)
@@ -410,8 +408,6 @@ void onLostUser(SimpleOpenNI curContext,int userId)
   println("onLostUser - userId: " + userId);
   
   stopBpmDetecting(userId);
-  
-  osc.sendLostUser(userId);
 }
 
 void onVisibleUser(SimpleOpenNI curContext,int userId)

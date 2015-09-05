@@ -3,12 +3,11 @@ import netP5.*;
 import SimpleOpenNI.*;
 
 class OscAgent {
+  private static final int maxUsersSendTo = 6;
   private static final String OSCAddress_skel = "skel";
   private static final String OSCAddress_user = "user";
   private static final String OSCAddress_color = "color";
-  private static final String OSCAddress_new_user = "new_user";
-  private static final String OSCAddress_calib_success = "calib_success";
-  private static final String OSCAddress_lost_user = "lost_user";
+  private static final String OSCAddress_userlist = "list";
   
   String[] maxJoints = {
     "head",
@@ -87,6 +86,7 @@ class OscAgent {
     }
   }
   
+  
   void send(SimpleOpenNI context) {
     OscMessage message = new OscMessage(OSCAddress_skel);
     int userId = 0;
@@ -94,57 +94,61 @@ class OscAgent {
     float confidence;
     
     int[] userList = context.getUsers();
+    // pickup first maxUsersSendTo users
+    int[] userIds = new int[maxUsersSendTo];
+    int userIdx = 0, userNumber = 0;
     for (int i = 0; i < userList.length; i++) {
-      userId = userList[i];
-      if(context.isTrackingSkeleton(userId)) {
-        if (context.getCoM(userId, point)) {
-          message.setAddrPattern(OSCAddress_user);
-          message.add(userId);
-          message.add(point.x);
-          message.add(point.y);
-          message.add(point.z);
-          message.add(0);
-          oscP5.send(message, sendAddress);
-          message.clear();
-        }
-        color userColor = getDancer(userId).getUserColor();
-        message.setAddrPattern(OSCAddress_color);
-        message.add(userId);
-        message.add(red(userColor) / 255);
-        message.add(green(userColor) / 255);
-        message.add(blue(userColor) / 255);
-        oscP5.send(message, sendAddress);
-        message.clear();
-        for (int j = 0; j < nativeJoints.length; j++) {
-          message.setAddrPattern(OSCAddress_skel);
-          message.add(userId);
-          message.add(maxJointFromNativeJoint[nativeJoints[j]]);
-          confidence = context.getJointPositionSkeleton(userId, nativeJoints[j], point);
-          message.add(point.x);
-          message.add(point.y);
-          message.add(point.z);
-          message.add(confidence);
-          oscP5.send(message, sendAddress);
-          message.clear();
-        }
+      if(context.isTrackingSkeleton(userList[i])) {
+        userIds[userIdx++] = userList[i];
+        if (userIdx == maxUsersSendTo) break;
       }
     }
-  }
-  
-  void sendNewUser(int userId) {
-    OscMessage message = new OscMessage(OSCAddress_new_user);
-    message.add(userId);
+    userNumber = userIdx;
+    while (userIdx < maxUsersSendTo) {
+      userIds[userIdx++] = 0;
+    }
+    // userlist
+    message.setAddrPattern(OSCAddress_userlist);
+    message.add(userNumber);
+    message.add(userIds);
     oscP5.send(message, sendAddress);
     message.clear();
-    message.setAddrPattern(OSCAddress_calib_success);
-    message.add(userId);
-    oscP5.send(message, sendAddress);
-  }
-  
-  void sendLostUser(int userId) {
-    OscMessage message = new OscMessage(OSCAddress_lost_user);
-    message.add(userId);
-    oscP5.send(message, sendAddress);
+    for (int i = 0; i < userNumber; i++) {
+      userId = userIds[i];
+      if (context.getCoM(userId, point)) {
+        // user
+        message.setAddrPattern(OSCAddress_user);
+        message.add(userId);
+        message.add(point.x);
+        message.add(point.y);
+        message.add(point.z);
+        message.add(0);
+        oscP5.send(message, sendAddress);
+        message.clear();
+      }
+      color userColor = getDancer(userId).getUserColor();
+      // color
+      message.setAddrPattern(OSCAddress_color);
+      message.add(userId);
+      message.add(red(userColor) / 255);
+      message.add(green(userColor) / 255);
+      message.add(blue(userColor) / 255);
+      oscP5.send(message, sendAddress);
+      message.clear();
+      for (int j = 0; j < nativeJoints.length; j++) {
+        // skel
+        message.setAddrPattern(OSCAddress_skel);
+        message.add(userId);
+        message.add(maxJointFromNativeJoint[nativeJoints[j]]);
+        confidence = context.getJointPositionSkeleton(userId, nativeJoints[j], point);
+        message.add(point.x);
+        message.add(point.y);
+        message.add(point.z);
+        message.add(confidence);
+        oscP5.send(message, sendAddress);
+        message.clear();
+      }
+    }
   }
   
   MaxUser maxUser = null;
