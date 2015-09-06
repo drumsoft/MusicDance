@@ -43,13 +43,13 @@ class DebugGraph {
     
     for (int i = 0; i < yList.length; i++) {
       stroke(colors[i]);
-      float px = uiDisplayLeft + uiDisplayWidth;
+      float px = uiDisplayLeft;
       float py = yList[i].getFirst() + i;
       int number, xIndex;
       number = xIndex = yList[i].size() - 1;
       ListIterator<Float> itr = yList[i].listIterator(0);
       while (itr.hasNext()) {
-        float x = uiDisplayLeft + (uiDisplayWidth * xIndex / number);
+        float x = uiDisplayLeft + uiDisplayWidth * (1.0 - (float)xIndex / number);
         float y = itr.next().intValue() + i;
         line(px,py, x,y);
         px = x; py = y;
