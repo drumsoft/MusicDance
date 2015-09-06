@@ -3,6 +3,10 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 class Dancer {
+  static final int strictScoreMax = 64;
+  static final int strictScoreMin = 0;
+  static final int givenWeightTTL = 150;
+  
   int pickupPosition = SimpleOpenNI.SKEL_NECK;
   /*
     頭    SKEL_HEAD -> 首
@@ -20,9 +24,10 @@ class Dancer {
   MusicDanceB controller;
   int userId;
   float cycle;
-  float weight;
   float previousBeatTime;
   float phase;
+  int strictScore;
+  float strictness, givenWeight, givenWeightLife;
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
     this.userId = userId;
@@ -30,7 +35,9 @@ class Dancer {
     this.controller = controller;
     
     cycle = 0.5;
-    weight = 0;
+    strictness = 0;
+    givenWeight = 0;
+    givenWeightLife = 0;
     float currentCycle = 60 / sound.currentBPM;
     
     fSpeed = new MoveFilterSpeed(currentTime); // startValue, currentTime
@@ -58,21 +65,29 @@ class Dancer {
     
     fMC.feedback(fAvg.value);
     
-    addDataToGraph(userId, 0, 0.1 * speed); // blue
-    addDataToGraph(userId, 1, cf.value() * 200); // red
-    addDataToGraph(userId, 2, fRng.value() * 200);
-    addDataToGraph(userId, 3, fMC.value() * 200);
-    addDataToGraph(userId, 4, fAvg.value() * 200);
-    addDataToGraph(userId, 5, 200 * 60 / sound.currentBPM);
+    addDataToGraph(userId, 0, 0.1 * speed); // speed
+    addDataToGraph(userId, 1, cf.value() * 200); // raw cycle
+    //addDataToGraph(userId, 2, fRng.value() * 200); // ranged
+    addDataToGraph(userId, 2, fMC.value() * 200); // corrected
+    //addDataToGraph(userId, 4, fAvg.value() * 200); // averaged
+    addDataToGraph(userId, 3, strictness * 200); // strictness
+    addDataToGraph(userId, 4, 200 * 60 / sound.currentBPM);
     
     if (isUpdated) {
       previousBeatTime = currentTime;
-      weight += 0.1;
-      if (weight > 1.0) weight = 1.0;
       phase = 0;
+      
+      if (fRng.isValid() && fMC.isValid()) {
+        if (strictScore < strictScoreMax) strictScore++;
+      } else {
+        if (strictScore > strictScoreMin) strictScore--;
+      }
+      strictness = (float)strictScore / strictScoreMax;
     } else {
       phase = ((getTime() - previousBeatTime) / cycle) % 1;
     }
+    
+    if (givenWeightLife > 0) givenWeightLife--;
   }
   
   // -----------------------------------------------------
@@ -87,11 +102,16 @@ class Dancer {
   }
   
   float getWeight() {
-    return weight;
+    return givenWeightLife > 0 ? givenWeight : strictness;
+  }
+  
+  float getStrictness() {
+    return strictness;
   }
   
   void setWeight(float weight) {
-    this.weight = weight;
+    givenWeight = weight;
+    givenWeightLife = givenWeightTTL;
   }
   
   // -----------------------------------------------------

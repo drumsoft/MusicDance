@@ -17,8 +17,8 @@ static final int MODE_PLAYBACK_STILL = 3;
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
 
-static final int graph_series = 6;
-static final int[] graph_series_colors = {#7777FF,#FF0000,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
+static final int graph_series = 5;
+static final int[] graph_series_colors = {#7777FF,#dd7777,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
 
 Preferences prefs;
 SimpleOpenNI context;
@@ -35,8 +35,6 @@ float        rotX = radians(180);  // by default rotate the hole scene 180deg ar
                                    // the data from openni comes upside down
 float        rotY = radians(0);
 
-PVector      bodyCenter = new PVector();
-PVector      bodyDir = new PVector();
 PVector      com = new PVector();
 color[]     userClr = new color[]{ color(255,0,0),
                                    color(0,255,0),
@@ -200,9 +198,11 @@ void draw()
   for(int i=0;i<userList.length;i++)
   {
     if(context.isTrackingSkeleton(userList[i])) {
+      Dancer dancer = getDancer(userList[i]);
+      
+      stroke(lerpColor(#818181, #ff0000, dancer.getWeight()));
       drawSkeleton(userList[i]);
       
-      Dancer dancer = getDancer(userList[i]);
       dancer.update(getTime());
       dancer.updateVisual();
       float cycle = dancer.getCycle(), weight = dancer.getWeight();
@@ -306,7 +306,7 @@ void drawDisplayTests() {
 // draw the skeleton with the selected joints
 void drawSkeleton(int userId)
 {
-  strokeWeight(3);
+  strokeWeight(5);
 
   // to get the 3d joint data
   drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
@@ -330,7 +330,14 @@ void drawSkeleton(int userId)
   drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
   drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT);  
 
-  // draw body direction
+  //drawBodyDirection(userId);
+
+  strokeWeight(1);
+}
+
+void drawBodyDirection(int userId) {
+  PVector bodyCenter = new PVector();
+  PVector bodyDir = new PVector();
   getBodyDirection(userId,bodyCenter,bodyDir);
   
   bodyDir.mult(200);  // 200mm length
@@ -339,9 +346,6 @@ void drawSkeleton(int userId)
   stroke(255,200,200);
   line(bodyCenter.x,bodyCenter.y,bodyCenter.z,
        bodyDir.x ,bodyDir.y,bodyDir.z);
-
-  strokeWeight(1);
- 
 }
 
 void drawLimb(int userId,int jointType1,int jointType2)
@@ -354,11 +358,10 @@ void drawLimb(int userId,int jointType1,int jointType2)
   confidence = context.getJointPositionSkeleton(userId,jointType1,jointPos1);
   confidence = context.getJointPositionSkeleton(userId,jointType2,jointPos2);
 
-  stroke(255,0,0,confidence * 200 + 55);
   line(jointPos1.x,jointPos1.y,jointPos1.z,
        jointPos2.x,jointPos2.y,jointPos2.z);
   
-  drawJointOrientation(userId,jointType1,jointPos1,50);
+  //drawJointOrientation(userId,jointType1,jointPos1,50);
 }
 
 void drawJointOrientation(int userId,int jointType,PVector pos,float length)

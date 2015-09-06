@@ -8,6 +8,8 @@ class OscAgent {
   private static final String OSCAddress_user = "user";
   private static final String OSCAddress_color = "color";
   private static final String OSCAddress_userlist = "list";
+  private static final String OSCAddress_strictness = "strictness";
+  private static final String OSCAddress_weight = "weight";
   
   String[] maxJoints = {
     "head",
@@ -115,6 +117,7 @@ class OscAgent {
     message.clear();
     for (int i = 0; i < userNumber; i++) {
       userId = userIds[i];
+      Dancer dancer = getDancer(userId);
       if (context.getCoM(userId, point)) {
         // user
         message.setAddrPattern(OSCAddress_user);
@@ -126,13 +129,19 @@ class OscAgent {
         oscP5.send(message, sendAddress);
         message.clear();
       }
-      color userColor = getDancer(userId).getUserColor();
       // color
+      color userColor = dancer.getUserColor();
       message.setAddrPattern(OSCAddress_color);
       message.add(userId);
       message.add(red(userColor) / 255);
       message.add(green(userColor) / 255);
       message.add(blue(userColor) / 255);
+      oscP5.send(message, sendAddress);
+      message.clear();
+      // strictness
+      message.setAddrPattern(OSCAddress_strictness);
+      message.add(userId);
+      message.add(dancer.getStrictness());
       oscP5.send(message, sendAddress);
       message.clear();
       for (int j = 0; j < nativeJoints.length; j++) {
@@ -154,7 +163,8 @@ class OscAgent {
   MaxUser maxUser = null;
   
   void oscEvent(OscMessage theOscMessage) {
-    if (theOscMessage.addrPattern().equals(OSCAddress_skel)) {
+    String addr = theOscMessage.addrPattern();
+    if (addr.equals(OSCAddress_skel)) {
       // ['skel', 'i',USER_ID, 's','SKEL_PART', 'f','X', 'f','Y', 'f','Z', 'f','CONFIDENCE']
       int userId = theOscMessage.get(0).intValue();
       if (maxUser != null && maxUser.life() <= 0) {
@@ -170,6 +180,12 @@ class OscAgent {
           theOscMessage.get(3).floatValue(),
           theOscMessage.get(4).floatValue()
         );
+      }
+    } else if (addr.equals(OSCAddress_weight)) {
+      int userId = theOscMessage.get(0).intValue();
+      Dancer dancer = getDancer(userId);
+      if (dancer != null) {
+        dancer.setWeight(theOscMessage.get(1).floatValue());
       }
     }
   }
