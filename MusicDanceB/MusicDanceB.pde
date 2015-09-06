@@ -36,20 +36,14 @@ float        rotX = radians(180);  // by default rotate the hole scene 180deg ar
 float        rotY = radians(0);
 
 PVector      com = new PVector();
-color[]     userClr = new color[]{ color(255,0,0),
-                                   color(0,255,0),
-                                   color(0,0,255),
-                                   color(255,255,0),
-                                   color(255,0,255),
-                                   color(0,255,255)
-                                 };
+color[]     userClr = new color[]{ #85B4C6, #8E88AE, #F2D0AE, #366E81, #B25C88, #8CB284 };
 color        whiteColor = color(255,255,255);
 
 DepthMapVisualizer[] depthMapVisualizer = new DepthMapVisualizer[]{
   new DepthMapMeshedWires(),
   new DepthMapContours(),
-  new DepthMapCubes(),
-  new DepthMapPointCloud(),
+  //new DepthMapCubes(),
+  //new DepthMapPointCloud(),
   new DepthMapRandomWires(),
 };
 int visualizerIndex = 1;
