@@ -1,16 +1,24 @@
 class Preferences {
   private final String[] defaultMap = {
+    "screenWidth", "1024",
+    "screenHeight", "768",
     "oscSendHost", "127.0.0.1",
     "oscSendPort", "7771",
     "oscRecvPort", "7772",
-    "run_mode", "2" // 0: demo, 2: playback
+    "run_mode", "2", // 0: demo, 2: playback
+    "kinectWidth", "640",
+    "kinectHeight", "480",
+    "zoom_mode", "2" // 0: default, 1: width, 2: height, 3: nozoom
   };
   
   private final String[] nnpMap = {
+    "screenWidth", "1024",
+    "screenHeight", "768",
     "oscSendHost", "192.168.0.2",
     "oscSendPort", "7772",
     "oscRecvPort", "7771",
-    "run_mode", "0" // 0: demo, 2: playback
+    "run_mode", "0", // 0: demo, 2: playback
+    "zoom_mode", "2" // 0: default, 1: width, 2: height, 3: nozoom
   };
   
   private String defaultMapName = "default";

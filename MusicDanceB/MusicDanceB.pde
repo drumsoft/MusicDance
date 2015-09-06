@@ -14,6 +14,11 @@ static final int MODE_RECORD = 1;
 static final int MODE_PLAYBACK = 2;
 static final int MODE_PLAYBACK_STILL = 3;
 
+static final int ZOOM_MODE_DEFAULT = 0; // fov angle 60 -> 45
+static final int ZOOM_MODE_WIDTH = 1; // fit to width
+static final int ZOOM_MODE_HEIGHT = 2; // fit to height
+static final int ZOOM_MODE_NOZOOM = 3; // 1:1
+
 static final String pathToStoreStill = "depthMap.json";
 static final String pathToStoreMovie = "SkeletonRec.oni";
 
@@ -24,11 +29,6 @@ Preferences prefs;
 SimpleOpenNI context;
 SoundPlayer sound;
 OscAgent osc;
-
-String oscSendHost;
-int oscSendPort;
-int oscRecvPort;
-int run_mode;
 
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
@@ -57,13 +57,16 @@ float frameCountStart = 0;
 
 void setup()
 {
-  size(1024,768,P3D);  // strange, get drawing error in the cameraFrustum if i use P3D, in opengl there is no problem
-  
   prefs = new Preferences();
+  size(prefs.getInt("screenWidth"), prefs.getInt("screenHeight"), P3D);
+  
   String oscSendHost = prefs.get("oscSendHost");
   int oscSendPort = prefs.getInt("oscSendPort");
   int oscRecvPort = prefs.getInt("oscRecvPort");
   int run_mode = prefs.getInt("run_mode");
+  int kinectWidth = prefs.getInt("kinectWidth");
+  int kinectHeight = prefs.getInt("kinectHeight");
+  int zoom_mode = prefs.getInt("zoom_mode");
   
   switch (run_mode) {
     case MODE_DEMO:
@@ -109,17 +112,34 @@ void setup()
       //context.addNodeToRecording(SimpleOpenNI.NODE_IR, true);
       break;
   }
-
+  
+  float fov_angle;
+  switch (zoom_mode) {
+    case ZOOM_MODE_WIDTH:
+      fov_angle = 2 * atan( tan(radians(60)/2) * kinectWidth / width );
+      break;
+    case ZOOM_MODE_HEIGHT:
+      fov_angle = 2 * atan( tan(radians(60)/2) * kinectHeight / height );
+      break;
+    case ZOOM_MODE_NOZOOM:
+      fov_angle = radians(60);
+      break;
+    default:
+      fov_angle = radians(45);
+      break;
+  }
+  
   stroke(255,255,255);
   smooth();
-  perspective(radians(45),
+  perspective(fov_angle,
               float(width)/float(height),
               10,150000);
-
-  uiDisplayLeft   = width * 0.15;
-  uiDisplayTop    = height * 0.15;
-  uiDisplayWidth  = width * 0.7;
-  uiDisplayHeight = height * 0.7;
+  
+  float sizeRate = tan(fov_angle/2) / tan(radians(60)/2);
+  uiDisplayLeft   = width * 0.5 * (1 - sizeRate);
+  uiDisplayTop    = height * 0.5 * (1 - sizeRate);
+  uiDisplayWidth  = width * sizeRate;
+  uiDisplayHeight = height * sizeRate;
   
   for (int i = 0; i < depthMapVisualizer.length; i++) {
     depthMapVisualizer[i].initilize(this, context.depthWidth(), context.depthHeight());
