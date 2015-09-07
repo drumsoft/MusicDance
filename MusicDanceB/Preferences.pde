@@ -12,8 +12,8 @@ class Preferences {
   };
   
   private final String[] nnpMap = {
-    "screenWidth", "1024",
-    "screenHeight", "768",
+    "screenWidth", "1280",
+    "screenHeight", "800",
     "oscSendHost", "192.168.0.2",
     "oscSendPort", "7772",
     "oscRecvPort", "7771",
