@@ -8,7 +8,7 @@ class OscAgent {
   private static final String OSCAddress_user = "user";
   private static final String OSCAddress_color = "color";
   private static final String OSCAddress_userlist = "list";
-  private static final String OSCAddress_strictness = "strictness";
+  private static final String OSCAddress_userstatus = "userstatus";
   private static final String OSCAddress_weight = "weight";
   
   String[] maxJoints = {
@@ -138,9 +138,10 @@ class OscAgent {
       message.add(blue(userColor) / 255);
       oscP5.send(message, sendAddress);
       message.clear();
-      // strictness
-      message.setAddrPattern(OSCAddress_strictness);
+      // userstatus
+      message.setAddrPattern(OSCAddress_userstatus);
       message.add(userId);
+      message.add(dancer.getSmoothBPM());
       message.add(dancer.getStrictness());
       oscP5.send(message, sendAddress);
       message.clear();

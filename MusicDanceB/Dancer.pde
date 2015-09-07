@@ -114,6 +114,11 @@ class Dancer {
     givenWeightLife = givenWeightTTL;
   }
   
+  // bpm with smoothing
+  float getSmoothBPM() {
+    return 60 / fAvg.value();
+  }
+  
   // -----------------------------------------------------
   DebugGraph graph;
   
