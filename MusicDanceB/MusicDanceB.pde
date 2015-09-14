@@ -153,6 +153,8 @@ void setup()
   launchCheckTimer = new Timer();
   launchChecker = new LaunchChecker();
   launchCheckTimer.schedule(launchChecker, 1000);
+  
+  noCursor();
 }
 
 void drawDepthImageMap() {
