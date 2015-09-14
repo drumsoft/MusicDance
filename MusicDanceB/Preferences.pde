@@ -1,7 +1,7 @@
 class Preferences {
   private final String[] defaultMap = {
-    "screenWidth", "1024",
-    "screenHeight", "768",
+    "screenWidth", "1280",
+    "screenHeight", "800",
     "oscSendHost", "127.0.0.1",
     "oscSendPort", "7771",
     "oscRecvPort", "7772",
