@@ -219,12 +219,15 @@ class SoundPlayer extends Bead {
       lowTensionPartCount = 0;
     }
     
-    if (playingSong != null) {
-      masterGain.removeConnection(0, playingSong, 0);
-    }
+    SamplePlayer previousSong = playingSong;
     playingSong = players[currentSong * 6 + currentPart];
     playingSong.reset();
-    masterGain.addInput(0, playingSong, 0);
+    if (previousSong != playingSong) {
+      masterGain.addInput(0, playingSong, 0);
+      if (previousSong != null) {
+        masterGain.removeConnection(0, previousSong, 0);
+      }
+    }
     playingSong.setEndListener(this);
     println("Song:" + currentSong + " Part:" + currentPart + " BPM:" + currentBPM + " tension:" + tension + " hand:" + handsUpFactor);
   }
