@@ -3,4 +3,4 @@ depthMap*.json
 temp*
 .previous_error
 output
-watchd.pid
+*.pid
