@@ -113,6 +113,7 @@ class OscAgent {
     message.setAddrPattern(OSCAddress_userlist);
     message.add(userNumber);
     message.add(userIds);
+    message.add(sound.getBPM());
     oscP5.send(message, sendAddress);
     message.clear();
     for (int i = 0; i < userNumber; i++) {
