@@ -29,6 +29,7 @@ Preferences prefs;
 SimpleOpenNI context;
 SoundPlayer sound;
 OscAgent osc;
+ScreenSaver screenSaver;
 
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
@@ -150,11 +151,13 @@ void setup()
   sound = new SoundPlayer(this);
   sound.start();
   
+  screenSaver = new ScreenSaver();
+  
+  noCursor();
+  
   launchCheckTimer = new Timer();
   launchChecker = new LaunchChecker();
   launchCheckTimer.schedule(launchChecker, 1000);
-  
-  noCursor();
 }
 
 void drawDepthImageMap() {
@@ -282,12 +285,14 @@ void draw()
   
   if (movingScore  > 0)  sound.setMoving(movingScore);
   if (handsUpScore > 0) sound.setHandsUp(handsUpScore);
-
+  
   // draw the kinect cam
   //context.drawCamFrustum();
-
+  
   drawGraphs();
-
+  
+  screenSaver.draw();
+  
   osc.send(context);
   
   frameCounter++;
@@ -420,6 +425,7 @@ void onNewUser(SimpleOpenNI curContext,int userId)
   context.startTrackingSkeleton(userId);
   
   startBpmDetecting(userId);
+  screenSaver.setPopulation(dancers.size());
 }
 
 void onLostUser(SimpleOpenNI curContext,int userId)
@@ -427,6 +433,7 @@ void onLostUser(SimpleOpenNI curContext,int userId)
   println("onLostUser - userId: " + userId);
   
   stopBpmDetecting(userId);
+  screenSaver.setPopulation(dancers.size());
 }
 
 void onVisibleUser(SimpleOpenNI curContext,int userId)
