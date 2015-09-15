@@ -83,6 +83,7 @@ class Dancer {
         if (strictScore > strictScoreMin) strictScore--;
       }
       strictness = (float)strictScore / strictScoreMax;
+      strictness = strictness * strictness;
       
       sound.kick();
       
