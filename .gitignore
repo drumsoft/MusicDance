@@ -4,3 +4,4 @@ temp*
 .previous_error
 output
 *.pid
+*.pkf

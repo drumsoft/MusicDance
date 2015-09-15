@@ -8,10 +8,17 @@ class SoundPlayer extends Bead {
   double originalLength = 15.610;
   double positionOffsetToFirstBeat = 166; // 最初のビート位置へのオフセット
   float beatsToFollowBpm = 4;
+  
+  static final float fadeStartTimeAfterLastKick = 10.0;
+  static final float fadeOutPerFrame = 1.0 / (4.0 * 30.0); // gain per frame
+  static final float fadeInPerKick = 1.0 / (4.0 * 8.0); // gain per beat
+  
   float currentBPM;
   float currentTime;
   float startTime, endTime, startBpm, endBpm;
   float previousTapEvent;
+  
+  String ambientSoundFile = "m0-all.wav";
   String[] soundFiles = { // サウンドファイルの一覧
     "m1-A.wav",
     "m1-B.wav",
@@ -44,9 +51,12 @@ class SoundPlayer extends Bead {
     "m5-E.wav",
     "m5-F.wav"
   };
+  SamplePlayer ambientSoundPlayer;
   SamplePlayer playingSong;
   SamplePlayer[] players;
   Gain masterGain;
+  Gain ambientGain;
+  double ambientSoundLength;
   
   int tapCount = 0;
   int currentSong = 0; // [0, 3] 現在の曲
@@ -59,6 +69,10 @@ class SoundPlayer extends Bead {
   int lowTensionPartCount = 0;
   boolean songChangeBreakPlayed = false;
   float fadeInVolume = -1.0;
+  
+  float lastKickedTime = 0;
+  float kickedVolume = 0;
+  boolean isFadeOuting = false;
   
   AudioContext ac;
   
@@ -73,16 +87,26 @@ class SoundPlayer extends Bead {
     endBpm = originalBPM;
     
     ac = new AudioContext();
+    
     masterGain = new Gain(ac, 1, 1.0);
     ac.out.addInput(masterGain);
     
     playbackSpeed = new Static(ac, 1.0);
     
     players = new SamplePlayer[soundFiles.length];
-    
     for (int i = 0; i < soundFiles.length; i++) {
-      loadSound(i);
+      players[i] = loadSound(soundFiles[i]);
     }
+    
+    ambientGain = new Gain(ac, 1, 1.0);
+    ac.out.addInput(ambientGain);
+    ambientSoundPlayer = loadSound(ambientSoundFile);
+    ambientSoundPlayer.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
+    ambientSoundPlayer.setLoopPointsFraction(0, 1);
+    ambientGain.addInput(0, ambientSoundPlayer, 0);
+    ambientSoundLength = ambientSoundPlayer.getSample().getLength();
+    
+    setGain();
   }
   
   void start() {
@@ -117,15 +141,36 @@ class SoundPlayer extends Bead {
       currentBPM = endBpm;
       playbackSpeed.setValue(currentBPM / originalBPM);
     }
+    
+    if (isFadeOuting) { // Gain fadeout.
+      if (kickedVolume > 0) {
+        kickedVolume -= fadeOutPerFrame;
+        if (kickedVolume < 0) kickedVolume = 0;
+        setGain();
+      }
+    } else { // check fadeout should be started.
+      if (currentTime - lastKickedTime > fadeStartTimeAfterLastKick) {
+        isFadeOuting = true;
+      }
+    }
   }
   
-  // TODO: adjust volume by population and tension.
-  void userStatus(float bpm) {
-    if (fadeInVolume < 0.9) {
-      fadeInVolume += 1.0 / 16.0;
-      masterGain.setGain(Math.max(0.0, Math.min(1.0, fadeInVolume)));
-      println( Float.toString(fadeInVolume) + " -> " + Float.toString(Math.max(0.0, Math.min(0.9, fadeInVolume))) );
-    }
+  void kick() { // up the Gain
+    lastKickedTime = getTime();
+    isFadeOuting = false;
+    kickedVolume += fadeInPerKick;
+    if (kickedVolume > 1.0) kickedVolume = 1.0;
+    setGain();
+  }
+  
+  void setGain() {
+    masterGain.setGain(gainFromVolume(kickedVolume));
+    ambientGain.setGain(gainFromVolume(1 - kickedVolume));
+    //println("Gain:" + Float.toString(kickedVolume));
+  }
+  
+  float gainFromVolume(float volume) {
+    return (float)Math.pow(10, (volume - 1)) - 0.1;
   }
   
   float getBPM() {
@@ -160,13 +205,14 @@ class SoundPlayer extends Bead {
   }
   
   // サウンドをロードしてループ設定を行う
-  void loadSound(int i) {
-    Sample sample = SampleManager.sample(dataPath(soundFiles[i]));
-    players[i] = new SamplePlayer(ac, sample);
-    players[i].setKillOnEnd(false);
-    //players[i].setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
-    //players[i].setLoopPointsFraction(0, 1);
-    players[i].setRate(playbackSpeed);
+  SamplePlayer loadSound(String fileName) {
+    Sample sample = SampleManager.sample(dataPath(fileName));
+    SamplePlayer player = new SamplePlayer(ac, sample);
+    player.setKillOnEnd(false);
+    //player.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
+    //player.setLoopPointsFraction(0, 1);
+    player.setRate(playbackSpeed);
+    return player;
   }
   
   // 曲を変更する
@@ -230,5 +276,7 @@ class SoundPlayer extends Bead {
     }
     playingSong.setEndListener(this);
     println("Song:" + currentSong + " Part:" + currentPart + " BPM:" + currentBPM + " tension:" + tension + " hand:" + handsUpFactor);
+    
+    ambientSoundPlayer.setPosition(ambientSoundLength * (currentPart % 6) / 6);
   }
 }

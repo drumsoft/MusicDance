@@ -5,7 +5,7 @@ class Preferences {
     "oscSendHost", "127.0.0.1",
     "oscSendPort", "7771",
     "oscRecvPort", "7772",
-    "run_mode", "0", // 0: demo, 2: playback
+    "run_mode", "2", // 0: demo, 2: playback
     "kinectWidth", "640",
     "kinectHeight", "480",
     "zoom_mode", "2" // 0: default, 1: width, 2: height, 3: nozoom

@@ -28,7 +28,6 @@ class ScreenSaver {
   }
   
   void setPopulation(int number) {
-    println("[SAVER] population:" + number);
     if (number == 0) {
       isNoUser = true;
       if (!isVisible) {

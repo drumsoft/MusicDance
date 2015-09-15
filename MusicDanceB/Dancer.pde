@@ -83,6 +83,9 @@ class Dancer {
         if (strictScore > strictScoreMin) strictScore--;
       }
       strictness = (float)strictScore / strictScoreMax;
+      
+      sound.kick();
+      
     } else {
       phase = ((getTime() - previousBeatTime) / cycle) % 1;
     }
