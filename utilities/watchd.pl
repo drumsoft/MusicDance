@@ -52,7 +52,7 @@ sub main {
     }
     sleep($sleep_time);
     if (ExclusiveLaunch::check_update($self_pid_file)) {
-      report("I'm updated.");
+      report("I'm updated. exit.");
       last;
     }
   }
@@ -215,8 +215,7 @@ sub exec_applescript {
 }
 
 sub report {
-  print '[watched] ', join(' ', @_);
-  print "\n";
+  print '[watched] ', join(' ', @_), "\n";
 }
 
 # --------------------------------
@@ -230,14 +229,14 @@ sub launch {
   my $pid_fh = _open_pid_file($pid_file);
   my $prev_pid = _get_pid($pid_fh);
   if (_exists_process($prev_pid)) { # launched
-    print "[watched] already launched.\n";
+    print "[watched] already started.\n";
     _close_pid($pid_fh);
     return;
   }
   _write_pid($pid_fh,   _current_pid());
   _close_pid($pid_fh);
   
-  print "[watched] launched.\n";
+  print "[watched] started.\n";
   $main->();
 }
 
