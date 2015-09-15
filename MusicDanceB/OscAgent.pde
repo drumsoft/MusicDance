@@ -62,7 +62,11 @@ class OscAgent {
   OscP5 oscP5;
   NetAddress sendAddress;
   
+  int user_offset;
+  
   OscAgent(int recievePort, String sendHost, int sendPort) {
+    user_offset = 0;
+    
     oscP5 = new OscP5(this, recievePort);
     sendAddress = new NetAddress(sendHost, sendPort);
     
@@ -117,7 +121,7 @@ class OscAgent {
     oscP5.send(message, sendAddress);
     message.clear();
     for (int i = 0; i < userNumber; i++) {
-      userId = userIds[i];
+      userId = userIds[(i + user_offset) % userNumber];
       Dancer dancer = getDancer(userId);
       if (context.getCoM(userId, point)) {
         // user
@@ -159,6 +163,11 @@ class OscAgent {
         oscP5.send(message, sendAddress);
         message.clear();
       }
+    }
+    
+    user_offset++;
+    if (user_offset >= userNumber) {
+      user_offset = 0;
     }
   }
   
