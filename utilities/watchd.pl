@@ -6,6 +6,7 @@ use Encode;
 use File::Find;
 
 my $sleep_time = 10;
+my $activate_java = 1;
 
 my $NOOP = 0;
 my $QUIT = 1;
@@ -15,23 +16,26 @@ my $HIDE = 4;
 my $self_pid_file = 'watchd.pid';
 
 my %operation_by_appnames = (
+  'java' => $NOOP,
   'Finder' => $NOOP,
   'CotEditor' => $NOOP,
-  'java' => $NOOP,
   'Terminal' => $NOOP,
   'Activity Monitor' => $NOOP,
+  'Console' => $NOOP,
   'firefox' => $NOOP,
   'SoundGrid Studio System' => $LAUNCH,
 );
 
 my $operation_default = $QUIT;
 
+my $java_root = '/Users/hrk/projects/MusicDance/git';
+
 my %java_processes = (
   MusicDanceB => {
     search => ' -Xdock:name=MusicDanceB ',
-    command => 'processing-java --present --sketch=/Users/hrk/projects/MusicDance/git/MusicDanceB --output=/Users/hrk/projects/MusicDance/git/output --force',
-    dir => '/Users/hrk/projects/MusicDance/git/MusicDanceB',
-    date => 0
+    command => "processing-java --present --sketch=$java_root/MusicDanceB --output=$java_root/output --force",
+    dir => "$java_root/MusicDanceB",
+    datefile => "MusicDanceB.pid",
   }
 );
 
@@ -44,9 +48,13 @@ sub main {
     if (!is_key_injected()) {
       operate_apps();
       javaapp_launch();
-      java_activate();
+      java_activate() if $activate_java;
     }
     sleep($sleep_time);
+    if (ExclusiveLaunch::check_update($self_pid_file)) {
+      report("I'm updated.");
+      last;
+    }
   }
 }
 
@@ -56,13 +64,13 @@ sub javaapp_launch {
   local $/ = undef;
   my ($fh, @ps);
   
-  open $fh, 'ps |' or die 'cannot exec ps command.';
+  open $fh, 'ps ax |' or die 'cannot exec ps command.';
   @ps = <$fh>;
   close $fh;
   
   while  (my ($name, $process) = each %java_processes) {
     my $launched = 0 < (grep { /$process->{search}/ } @ps);
-    if ($launched && dir_updated_date($process->{dir}) > $process->{date}) {
+    if ($launched && dir_updated_date($process->{dir}) > get_file_updated_date($process->{datefile})) {
       report('kill java (to relaunch):', $name);
       system('killall java');
       $launched = 0;
@@ -70,7 +78,7 @@ sub javaapp_launch {
     if (!$launched) {
       report('launch java:', $name);
       system($process->{command} . ' &');
-      $process->{date} = time();
+      set_file_updated_date($process->{datefile});
     }
   }
 }
@@ -166,6 +174,18 @@ sub get_all_application_names {
   return split(/\, +/, $result);
 }
 
+sub set_file_updated_date {
+  my $path = shift;
+  my $fh;
+  open $fh, '>', $path;
+  close $fh;
+}
+
+sub get_file_updated_date {
+  my $path = shift;
+  return -e $path ? (stat($path))[9] : 0;
+}
+
 sub dir_updated_date {
   my $start = shift;
   my $date = 0;
@@ -195,7 +215,7 @@ sub exec_applescript {
 }
 
 sub report {
-  print join ' ', @_;
+  print '[watched] ', join(' ', @_);
   print "\n";
 }
 
@@ -210,18 +230,20 @@ sub launch {
   my $pid_fh = _open_pid_file($pid_file);
   my $prev_pid = _get_pid($pid_fh);
   if (_exists_process($prev_pid)) { # launched
-    if ( _get_timestamp($0) <= _get_timestamp($pid_file) ) {
-      print "already launched.\n";
-      _close_pid($pid_fh); # launched, not updated.
-      return;
-    }
-    print "updated. killing previous process.\n";
-    _kill_process($prev_pid);
+    print "[watched] already launched.\n";
+    _close_pid($pid_fh);
+    return;
   }
   _write_pid($pid_fh,   _current_pid());
   _close_pid($pid_fh);
   
+  print "[watched] launched.\n";
   $main->();
+}
+
+sub check_update {
+  my $pid_file = shift;
+  return _get_timestamp($0) > _get_timestamp($pid_file);
 }
 
 sub _open_pid_file {
@@ -249,7 +271,8 @@ sub _close_pid {
 }
 
 sub _get_timestamp {
-  (stat(shift))[9];
+  my $path = shift;
+  return -e $path ? (stat($path))[9] : 0;
 }
 
 sub _exists_process {
