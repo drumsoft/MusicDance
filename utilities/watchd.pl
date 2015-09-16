@@ -23,12 +23,12 @@ my %operation_by_appnames = (
   'Activity Monitor' => $NOOP,
   'Console' => $NOOP,
   'firefox' => $NOOP,
-  'SoundGrid Studio System' => $LAUNCH,
+  'SoundGrid Studio' => $LAUNCH,
 );
 
 my $operation_default = $QUIT;
 
-my $java_root = '/Users/hrk/projects/MusicDance/git';
+my $java_root = '/Users/nnp/projects/MusicDance/git';
 
 my %java_processes = (
   MusicDanceB => {
@@ -229,7 +229,6 @@ sub launch {
   my $pid_fh = _open_pid_file($pid_file);
   my $prev_pid = _get_pid($pid_fh);
   if (_exists_process($prev_pid)) { # launched
-    print "[watched] already started.\n";
     _close_pid($pid_fh);
     return;
   }
