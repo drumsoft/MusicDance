@@ -1,6 +1,9 @@
 import beads.*;
 
 class SoundPlayer extends Bead {
+  static final int SPEED_SLOW = 0;
+  static final int SPEED_NORMAL = 1;
+  static final int SPEED_FAST = 2;
   
   float originalBPM = 123;
   float bpmCapacityMax = 190;
@@ -21,37 +24,24 @@ class SoundPlayer extends Bead {
   
   String ambientSoundFile = "m0-all.wav";
   String[] soundFiles = { // サウンドファイルの一覧
-    "m1-A.wav",
-    "m1-B.wav",
-    "m1-C.wav",
-    "m1-D.wav",
-    "m1-E.wav",
-    "m1-F.wav",
-    "m2-A.wav",
-    "m2-B.wav",
-    "m2-C.wav",
-    "m2-D.wav",
-    "m2-E.wav",
-    "m2-F.wav",
-    "m3-A.wav",
-    "m3-B.wav",
-    "m3-C.wav",
-    "m3-D.wav",
-    "m3-E.wav",
-    "m3-F.wav",
-    "m4-A.wav",
-    "m4-B.wav",
-    "m4-C.wav",
-    "m4-D.wav",
-    "m4-E.wav",
-    "m4-F.wav",
-    "m5-A.wav",
-    "m5-B.wav",
-    "m5-C.wav",
-    "m5-D.wav",
-    "m5-E.wav",
-    "m5-F.wav"
+    "m1-A.wav", "m1-B.wav", "m1-C.wav", "m1-D.wav", "m1-E.wav", "m1-F.wav", //0 minimal
+    "m2-A.wav", "m2-B.wav", "m2-C.wav", "m2-D.wav", "m2-E.wav", "m2-F.wav", //1 trance
+    "m3-A.wav", "m3-B.wav", "m3-C.wav", "m3-D.wav", "m3-E.wav", "m3-F.wav", //2 house
+    "m4-A.wav", "m4-B.wav", "m4-C.wav", "m4-D.wav", "m4-E.wav", "m4-F.wav", //3 DnB(fast)
+    "m5-A.wav", "m5-B.wav", "m5-C.wav", "m5-D.wav", "m5-E.wav", "m5-F.wav", //4 dubstep
+    "M8-A-02.wav", "M8-B-02.wav", "M8-C.wav", "M8-D.wav", "M8-E.wav", "M8-F.wav" //5 breakbeats(fast)
   };
+  int numberOfSongs = 6;
+  boolean[] isPlayed;
+  int[][] soundMap = {
+    { 0, 0, 3 },
+    { 4, 1, 1 },
+    { 2, 2, 5 },
+    { 2, 2, 2 },
+    { 4, 1, 3 },
+    { 0, 0, 5 }
+  };
+  
   SamplePlayer ambientSoundPlayer;
   SamplePlayer playingSong;
   SamplePlayer[] players;
@@ -59,17 +49,15 @@ class SoundPlayer extends Bead {
   Gain ambientGain;
   double ambientSoundLength;
   
-  int tapCount = 0;
   int currentSong = 0; // [0, 3] 現在の曲
   int currentPart = 0; // テンションによって変化 [0, 3] タップがなくなったら 4, 5, 次の曲
-  int lowTensionPartLimit = 4; // ローテンションのパートが この回数続いたら曲を変更
-  int nonTapLimit = 6; // タップなしの状態がこの秒数続いたら曲を変更
+  
+  int speedClass = SPEED_NORMAL;
+  int tensionClass = 0;
   
   Static playbackSpeed;
   float tension, handsUpFactor;
-  int lowTensionPartCount = 0;
-  boolean songChangeBreakPlayed = false;
-  float fadeInVolume = -1.0;
+  MoveFilterAverage tensionFilter;
   
   float lastKickedTime = 0;
   float kickedVolume = 0;
@@ -108,6 +96,10 @@ class SoundPlayer extends Bead {
     ambientSoundLength = ambientSoundPlayer.getSample().getLength();
     
     setGain();
+    
+    isPlayed = new boolean[numberOfSongs];
+    resetPlayed();
+    tensionFilter = new MoveFilterAverage(120, 0);
   }
   
   void start() {
@@ -119,6 +111,12 @@ class SoundPlayer extends Bead {
     ac.stop();
   }
   
+  void resetPlayed() {
+    for (int i = 0; i < numberOfSongs; i++) {
+      isPlayed[i] = false;
+    }
+  }
+
   // (weighted averaged bpm, phase by topDancer, strictness by topDancer)
   void changeBPM(float bpm, float phase, float strictness) {
     if (currentBPM != bpm) {
@@ -148,7 +146,11 @@ class SoundPlayer extends Bead {
     if (isFadeOuting) { // Gain fadeout.
       if (kickedVolume > 0) {
         kickedVolume -= fadeOutPerFrame;
-        if (kickedVolume < 0) kickedVolume = 0;
+        if (kickedVolume < 0) {
+          kickedVolume = 0;
+          isFadeOuting = false;
+          resetPlayed();
+        }
         setGain();
       }
     } else { // check fadeout should be started.
@@ -181,7 +183,7 @@ class SoundPlayer extends Bead {
   }
   
   void setMoving(float movingValue) {
-    tension = movingValue;
+    tension = tensionFilter.input(movingValue, 0);
   }
   
   void setTwisting(float twistingValue) {
@@ -220,52 +222,39 @@ class SoundPlayer extends Bead {
   
   // 曲を変更する
   void changeSong(boolean isEnded) {
-    int nextSong = currentSong, nextPart = currentPart;
-    
-    if (currentBPM > 160 && currentSong < 3) { // DnBへ変更条件(同じパートへ)
-      nextSong = (nextSong % 2) + 3;
-    } else if (currentBPM < 150 && currentSong == 3) { // DnBから元に戻す条件
-      nextSong = (nextSong % 3);
-    } else if (currentPart == 5) { // パート 5 の後は曲変更
-      if (nextSong < 3) {
-        nextSong = (currentSong + 1) % 3; // 0,1,2
-      } else {
-        nextSong = (currentSong - 3 + 1) % 2 + 3; // 3,4
-      }
-      nextPart = 0;
-    } else if (handsUpFactor > 0.5) { // 両手上げで最後のパートに(別の曲へつなぎたい)
-      nextPart = 5;
-    } else { // テンションで パート を切り替え
-      if (nextPart <= currentPart) { nextPart++; } //デモ用 短時間でパートを進める
-      /*
-      nextPart = (int)Math.min(tension / 150, 3);
-      
-      // ローテンションパートの回数をカウント
-      if (currentPart == 0 && nextPart == 0) {
-        lowTensionPartCount++;
-      }
-      
-      // ローテンションパートが続いたり、タップがない場合にブレイクにつなぐ
-      if ((getTime() - previousTapEvent > nonTapLimit) || lowTensionPartCount >= lowTensionPartLimit) {
-        if (songChangeBreakPlayed) {
-          nextPart = 5;
-        } else {
-          nextPart = 4;
-          songChangeBreakPlayed = true;
-        }
-      }
-      */
+    switch (speedClass) {
+      case SPEED_SLOW:
+        if (currentBPM > 122) speedClass = SPEED_NORMAL;
+        break;
+      case SPEED_NORMAL:
+        if (currentBPM > 163) speedClass = SPEED_FAST;
+        if (currentBPM > 100) speedClass = SPEED_SLOW;
+        break;
+      case SPEED_FAST:
+        if (currentBPM < 138) speedClass = SPEED_NORMAL;
+        break;
     }
     
+    if (tension > 210) {
+      if (tensionClass < soundMap.length - 1) tensionClass++;
+    } else if (tension < 80) {
+      if (tensionClass > 0) tensionClass--;
+    }
+    
+    int nextSong = soundMap[tensionClass][speedClass];
+    
     if (nextSong != currentSong) { // 曲変更時
-      lowTensionPartCount = 0;
-      songChangeBreakPlayed = false;
       currentSong = nextSong;
-      currentPart = nextPart;
+      if (!isPlayed[currentSong]) { // 未演奏の曲は頭から
+        currentPart = 0;
+        isPlayed[currentSong] = true;
+      }
       main.songChanged();
-    } else if (nextPart != currentPart) { // パート変更時
-      currentPart = nextPart;
-      lowTensionPartCount = 0;
+    } else { // 曲変更なし
+      currentPart++;
+      if (currentPart >= 6) {
+        currentPart = 0;
+      }
     }
     
     SamplePlayer previousSong = playingSong;
@@ -278,7 +267,7 @@ class SoundPlayer extends Bead {
       }
     }
     playingSong.setEndListener(this);
-    println("Song:" + currentSong + " Part:" + currentPart + " BPM:" + currentBPM + " tension:" + tension + " hand:" + handsUpFactor);
+    println("Song:" + currentSong + " Part:" + currentPart + " BPM:" + currentBPM + " tension:" + tension + " speedClass:" + speedClass + " tensionClass:" + tensionClass);
     
     ambientSoundPlayer.setPosition(ambientSoundLength * (currentPart % 6) / 6);
   }

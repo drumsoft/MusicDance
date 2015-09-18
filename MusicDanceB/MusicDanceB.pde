@@ -224,13 +224,6 @@ void draw()
       
       dancer.update(getTime());
       dancer.updateVisual();
-      float cycle = dancer.getCycle(), weight = dancer.getWeight();
-      cycleSum += cycle * weight;
-      weightSum += weight;
-      if (maxWeight < weight) {
-        topDancer = dancer;
-        maxWeight = weight;
-      }
       
       HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
       hmDetector.update();
@@ -238,11 +231,16 @@ void draw()
       BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
       bmDetector.updateWithTime(getTime());
       
-      movingScore  += bmDetector.getValue();
-      float handsUp = hmDetector.getValue();
-      if (handsUp > 0) {
-        handsUpScore += handsUp;
+      float weight = dancer.getWeight();
+      weightSum += weight;
+      if (maxWeight < weight) {
+        topDancer = dancer;
+        maxWeight = weight;
       }
+      
+      cycleSum += dancer.getCycle() * weight;
+      movingScore  += bmDetector.getValue() * weight;
+      handsUpScore += hmDetector.getValue() * weight;
     }
     
     // draw the center of mass
@@ -282,9 +280,8 @@ void draw()
   if (weightSum > 0) {
     sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase(), topDancer.getStrictness());
   }
-  
-  if (movingScore  > 0)  sound.setMoving(movingScore);
-  if (handsUpScore > 0) sound.setHandsUp(handsUpScore);
+  if (movingScore  > 0) sound.setMoving(movingScore / weightSum);
+  if (handsUpScore > 0) sound.setHandsUp(handsUpScore / weightSum);
   
   // draw the kinect cam
   //context.drawCamFrustum();
