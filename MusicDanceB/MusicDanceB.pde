@@ -280,7 +280,7 @@ void draw()
   
   sound.update(getTime());
   if (weightSum > 0) {
-    sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase());
+    sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase(), topDancer.getStrictness());
   }
   
   if (movingScore  > 0)  sound.setMoving(movingScore);

@@ -7,7 +7,8 @@ class SoundPlayer extends Bead {
   float bpmCapacityMin = 80;
   double originalLength = 15.610;
   double positionOffsetToFirstBeat = 166; // 最初のビート位置へのオフセット
-  float beatsToFollowBpm = 4;
+  float beatsToFollowBpm = 2; // BPMを変動させるまでにかかる時間の目標値(ビート数) strictness = 0 の時
+  float beatsToFollowBpmAdditionByStrictness = 6; // 同 strictness によって加算する値
   
   static final float fadeStartTimeAfterLastKick = 10.0;
   static final float fadeOutPerFrame = 1.0 / (4.0 * 30.0); // gain per frame
@@ -118,9 +119,11 @@ class SoundPlayer extends Bead {
     ac.stop();
   }
   
-  void changeBPM(float bpm, float phase) {
+  // (weighted averaged bpm, phase by topDancer, strictness by topDancer)
+  void changeBPM(float bpm, float phase, float strictness) {
     if (currentBPM != bpm) {
-      float targetTimeMinutes = beatsToFollowBpm * 2 / (currentBPM + bpm); // beatsToFollowBpm beats for averaged bpm
+      float targetTimeMinutes = (beatsToFollowBpm + beatsToFollowBpmAdditionByStrictness * strictness) * 2 / (currentBPM + bpm);
+      // beatsToFollowBpm beats for averaged bpm
       float halfBpmDiff = (bpm - currentBPM) / 2;
       float phaseDiff = halfBpmDiff * targetTimeMinutes + (phase - getPhase());
       float phaseAdjust = Math.round(phaseDiff) - phaseDiff;
