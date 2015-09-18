@@ -225,12 +225,6 @@ void draw()
       dancer.update(getTime());
       dancer.updateVisual();
       
-      HandsUpMoveDetector hmDetector = getHandsUpMoveDetector(userList[i]);
-      hmDetector.update();
-      
-      BodyMoveDetector bmDetector = getBodyMoveDetector(userList[i]);
-      bmDetector.updateWithTime(getTime());
-      
       float weight = dancer.getWeight();
       weightSum += weight;
       if (maxWeight < weight) {
@@ -239,8 +233,8 @@ void draw()
       }
       
       cycleSum += dancer.getCycle() * weight;
-      movingScore  += bmDetector.getValue() * weight;
-      handsUpScore += hmDetector.getValue() * weight;
+      movingScore  += dancer.getBodyMove() * weight;
+      handsUpScore += dancer.getHandsUp() * weight;
       
       dancer.drawHeart();
     }
@@ -270,8 +264,6 @@ void draw()
         textSize(96);
         fill(0,255,100);
         text(Integer.toString( (int)(getBodyMoveDetector(userList[i]).getValue()) ), 0, 40, 0);
-        fill(0,255,255);
-        text(Integer.toString( (int)(100.0 * getHandsUpMoveDetector(userList[i]).getValue()) ), 0, -20, 0);
         popMatrix();
       }
     }
@@ -281,9 +273,9 @@ void draw()
   sound.update(getTime());
   if (weightSum > 0) {
     sound.changeBPM(60 / (cycleSum / weightSum), topDancer.getPhase(), topDancer.getStrictness());
+    if (movingScore  > 0) sound.setMoving(movingScore / weightSum);
+    if (handsUpScore > 0) sound.setHandsUp(handsUpScore / weightSum);
   }
-  if (movingScore  > 0) sound.setMoving(movingScore / weightSum);
-  if (handsUpScore > 0) sound.setHandsUp(handsUpScore / weightSum);
   
   // draw the kinect cam
   //context.drawCamFrustum();
@@ -470,11 +462,7 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 
 // -----------------------------------------
 
-int [][] armsDetectionParts;
-int [][] bodyMoveDetectionParts;
 HashMap<Integer, Dancer> dancers;
-HashMap<Integer, HandsUpMoveDetector> handsUpDetectors;
-HashMap<Integer, BodyMoveDetector> bodyMoveDetectors;
 long systemStartedTime;
 float systemCurrentTime;
 
@@ -487,25 +475,7 @@ float getTime() {
 }
 
 void initMusicDanceSystem() {
-  armsDetectionParts = new int[4][2];
-  armsDetectionParts[0][0] = SimpleOpenNI.SKEL_LEFT_SHOULDER;
-  armsDetectionParts[0][1] = SimpleOpenNI.SKEL_LEFT_ELBOW;
-  armsDetectionParts[1][0] = SimpleOpenNI.SKEL_LEFT_ELBOW;
-  armsDetectionParts[1][1] = SimpleOpenNI.SKEL_LEFT_HAND;
-  armsDetectionParts[2][0] = SimpleOpenNI.SKEL_RIGHT_SHOULDER;
-  armsDetectionParts[2][1] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
-  armsDetectionParts[3][0] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
-  armsDetectionParts[3][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
-  
-  bodyMoveDetectionParts = new int[2][2];
-  bodyMoveDetectionParts[0][0] = SimpleOpenNI.SKEL_NECK;
-  bodyMoveDetectionParts[0][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
-  bodyMoveDetectionParts[1][0] = SimpleOpenNI.SKEL_NECK;
-  bodyMoveDetectionParts[1][1] = SimpleOpenNI.SKEL_LEFT_HAND;
-  
   dancers = new HashMap<Integer, Dancer>();
-  handsUpDetectors = new HashMap<Integer, HandsUpMoveDetector>();
-  bodyMoveDetectors = new HashMap<Integer, BodyMoveDetector>();
   systemStartedTime = System.currentTimeMillis();
   updateTime();
 }
@@ -515,32 +485,14 @@ void startBpmDetecting(int userId) {
   dancers.put(new Integer(userId), dancer);
   dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
   setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
-  
-  HandsUpMoveDetector hmDetector = new HandsUpMoveDetector(userId, context, this);
-  hmDetector.setMoveParts(armsDetectionParts);
-  handsUpDetectors.put(new Integer(userId), hmDetector);
-  
-  BodyMoveDetector bmDetector = new BodyMoveDetector(userId, context, this, getTime());
-  bmDetector.setMoveParts(bodyMoveDetectionParts);
-  bodyMoveDetectors.put(new Integer(userId), bmDetector);
 }
 
 Dancer getDancer(int userId) {
   return dancers.get(new Integer(userId));
 }
 
-HandsUpMoveDetector getHandsUpMoveDetector(int userId) {
-  return handsUpDetectors.get(new Integer(userId));
-}
-
-BodyMoveDetector getBodyMoveDetector(int userId) {
-  return bodyMoveDetectors.get(new Integer(userId));
-}
-
 void stopBpmDetecting(int userId) {
   dancers.remove(new Integer(userId));
-  handsUpDetectors.remove(new Integer(userId));
-  bodyMoveDetectors.remove(new Integer(userId));
 }
 
 // キー入力のハンドラ(ユーティリティ的な)

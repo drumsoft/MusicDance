@@ -7,6 +7,16 @@ class Dancer {
   static final int strictScoreMin = 0;
   static final int givenWeightTTL = 150;
   
+  int [][] armsDetectionParts = {
+    {SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW},
+    {SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND},
+    {SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW},
+    {SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND},
+  };
+  int [][] bodyMoveDetectionParts = {
+    {SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_HAND},
+    {SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_HAND},
+  };
   /*
     頭    SKEL_HEAD -> 首
     首    SKEL_NECK -> 頭,両肩
@@ -33,6 +43,9 @@ class Dancer {
   float[] heartRadius = new float[heartOffsets];
   float[] heartZ = new float[heartOffsets];
   float[] heartSize = new float[heartOffsets];
+  
+  HandsUpMoveDetector handsUpMoveDetector;
+  BodyMoveDetector bodyMoveDetector;
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
     this.userId = userId;
@@ -64,6 +77,12 @@ class Dancer {
       heartZ[i] = (float)(2.0 * Math.PI * Math.random());
       heartSize[i] = 12 + 90 * (float)Math.random();
     }
+    
+    handsUpMoveDetector = new HandsUpMoveDetector(userId, context, controller);
+    handsUpMoveDetector.setMoveParts(armsDetectionParts);
+    
+    bodyMoveDetector = new BodyMoveDetector(userId, context, controller, currentTime);
+    bodyMoveDetector.setMoveParts(bodyMoveDetectionParts);
   }
   
   MoveFilterSpeed fSpeedNeck, fSpeedTrio;
@@ -122,6 +141,9 @@ class Dancer {
     }
     
     if (givenWeightLife > 0) givenWeightLife--;
+    
+    handsUpMoveDetector.update();
+    bodyMoveDetector.updateWithTime(currentTime);
   }
   
   // -----------------------------------------------------
@@ -151,6 +173,14 @@ class Dancer {
   // bpm with smoothing
   float getSmoothBPM() {
     return 60 / fAvg.value();
+  }
+  
+  float getBodyMove() {
+    return bodyMoveDetector.getValue();
+  }
+  
+  float getHandsUp() {
+    return handsUpMoveDetector.getValue();
   }
   
   // -----------------------------------------------------

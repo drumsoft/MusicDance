@@ -24,13 +24,9 @@ class DepthMapCubes extends DepthMapVisualizer {
             if (dancer != null) {
               fill(dancer.getUserColor());
               realWorldPoint = dancer.movePoint(realWorldPoint);
+              radiusPlus = Math.max(Math.min(20, (dancer.getBodyMove()-100) / 10), 0);
             } else {
               fill(userClr[userMap[index] % userClr.length]);
-            }
-            BodyMoveDetector bmd = _main.getBodyMoveDetector(userMap[index]);
-            if (bmd != null) {
-              radiusPlus = Math.max(Math.min(20, (bmd.getValue()-100) / 10), 0);
-            } else {
               radiusPlus = 10;
             }
           }

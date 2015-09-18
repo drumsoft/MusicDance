@@ -17,13 +17,9 @@ class DepthMapMeshedWires extends DepthMapVisualizer {
           stroke(dancer.getUserColor());
           fromRealPoint = dancer.movePoint(fromRealPoint);
           toRealPoint = dancer.movePoint(toRealPoint);
+          strokeWeight(Math.max(Math.min(6, (dancer.getBodyMove()-80) / 40), 2));
         } else {
           stroke(userClr[userMap[from] % userClr.length]);
-        }
-        BodyMoveDetector bmd = _main.getBodyMoveDetector(userMap[from]);
-        if (bmd != null) {
-          strokeWeight(Math.max(Math.min(6, (bmd.getValue()-80) / 40), 2));
-        } else {
           strokeWeight(3);
         }
       }
