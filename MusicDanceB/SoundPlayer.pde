@@ -228,7 +228,7 @@ class SoundPlayer extends Bead {
         break;
       case SPEED_NORMAL:
         if (currentBPM > 163) speedClass = SPEED_FAST;
-        if (currentBPM > 100) speedClass = SPEED_SLOW;
+        if (currentBPM < 100) speedClass = SPEED_SLOW;
         break;
       case SPEED_FAST:
         if (currentBPM < 138) speedClass = SPEED_NORMAL;
