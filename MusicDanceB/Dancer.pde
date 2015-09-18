@@ -106,7 +106,7 @@ class Dancer {
   }
   
   float getWeight() {
-    return givenWeightLife > 0 ? givenWeight : strictness;
+    return givenWeightLife > 0 ? (givenWeight + strictness) : strictness;
   }
   
   float getStrictness() {

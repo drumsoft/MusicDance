@@ -193,10 +193,25 @@ class OscAgent {
         );
       }
     } else if (addr.equals(OSCAddress_weight)) {
-      int userId = theOscMessage.get(0).intValue();
-      Dancer dancer = getDancer(userId);
-      if (dancer != null) {
-        dancer.setWeight(theOscMessage.get(1).floatValue());
+      // [0, 1] (フラット時 all 1, 差がつくと最低値が下がる) -> 
+      //[0, 9] (フラット時 all 0, 差がつくと最大値が上がる)
+      boolean weightValid = false;
+      float[] weights = new float[6];
+      weights[0] = theOscMessage.get(0).floatValue();
+      float minWeight = weights[0];
+      for (int i = 1; i < 6; i++) {
+        weights[i] = theOscMessage.get(i).floatValue();
+        if (weights[0] != weights[i]) weightValid = true;
+        if (minWeight > weights[i]) minWeight = weights[i];
+      }
+      if (minWeight < 0.1) minWeight = 0.1;
+      if (weightValid) {
+        for (int i = 0; i < 6; i++) {
+          Dancer dancer = getDancer(i+1);
+          if (dancer != null) {
+            dancer.setWeight((weights[i] > minWeight) ? (weights[i] / minWeight - 1) : 0);
+          }
+        }
       }
     }
   }
