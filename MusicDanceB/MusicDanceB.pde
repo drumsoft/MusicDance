@@ -219,7 +219,7 @@ void draw()
     if(context.isTrackingSkeleton(userList[i])) {
       Dancer dancer = getDancer(userList[i]);
       
-      stroke(lerpColor(#818181, #ff0000, dancer.getWeight()));
+      stroke(lerpColor(#818181, #ff0000, dancer.getStrictness()));
       drawSkeleton(userList[i]);
       
       dancer.update(getTime());
@@ -241,6 +241,8 @@ void draw()
       cycleSum += dancer.getCycle() * weight;
       movingScore  += bmDetector.getValue() * weight;
       handsUpScore += hmDetector.getValue() * weight;
+      
+      dancer.drawHeart();
     }
     
     // draw the center of mass

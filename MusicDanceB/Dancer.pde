@@ -27,6 +27,13 @@ class Dancer {
   float previousBeatTime;
   float phase;
   float strictness, givenWeight, givenWeightLife;
+  PVector center;
+  
+  static final int heartOffsets = 9;
+  float[] heartRadians = new float[heartOffsets];
+  float[] heartRadius = new float[heartOffsets];
+  float[] heartZ = new float[heartOffsets];
+  float[] heartSize = new float[heartOffsets];
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
     this.userId = userId;
@@ -38,6 +45,7 @@ class Dancer {
     givenWeight = 0;
     givenWeightLife = 0;
     float currentCycle = 60 / sound.currentBPM;
+    center = new PVector();
     
     fSpeed = new MoveFilterSpeed(currentTime); // startValue, currentTime
     fLPF = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
@@ -46,6 +54,13 @@ class Dancer {
     fMC = new MoveFilterMultipleCorrect(currentCycle, 1.5, 10); // startValue, threshold(current/previous), limit(samples)
     fAvg = new MoveFilterAverage(15, currentCycle); // samplesNumber, startValue
     sc = new StrictnessCounter(strictScoreMin, strictScoreMax);
+    
+    for (int i = 0; i < heartOffsets; i++) {
+      heartRadians[i] = 2.0 * (float)Math.PI * ((float)Math.random() - 0.5) / 10;
+      heartRadius[i]  = 30 * ((float)(Math.random() + Math.random()) / 2 - 1);
+      heartZ[i] = (float)(2.0 * Math.PI * Math.random());
+      heartSize[i] = 12 + 90 * (float)Math.random();
+    }
   }
   
   MoveFilterSpeed fSpeed;
@@ -57,6 +72,8 @@ class Dancer {
   StrictnessCounter sc;
   
   void update(float currentTime) {
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_HEAD, center);
+    
     PVector p = new PVector();
     context.getJointPositionSkeleton(userId, pickupPosition, p);
     float speed = -fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
@@ -118,6 +135,32 @@ class Dancer {
   // bpm with smoothing
   float getSmoothBPM() {
     return 60 / fAvg.value();
+  }
+  
+  // -----------------------------------------------------
+  
+  void drawHeart() {
+    if (givenWeightLife > 0 && givenWeight >= 0.5) {
+      int count = (int)Math.floor(2 * givenWeight);
+      float phase = 2.0 * (float)Math.PI * 0.25 * givenWeightLife / (28 * cycle);
+      float radius = 150 + givenWeight * 20;
+      pushMatrix();
+      noStroke();
+      fill(#ed008c);
+      for (int i = 0; i < count; i++) {
+        float phase_ = phase + 2.0 * (float)Math.PI * ((float)i / count) + heartRadians[i % heartOffsets];
+        float radius_ = radius + heartRadius[i % heartOffsets];
+        float x = center.x + radius_ * (float)Math.cos(phase_);
+        float y = center.y + 30 * (float)Math.sin(phase_ + heartZ[i % heartOffsets]);
+        float z = center.z + radius_ * (float)Math.sin(phase_);
+        float r = heartSize[i % heartOffsets];
+        pushMatrix();
+        translate(x, y, z);
+        ellipse(0, 0, r, r);
+        popMatrix();
+      }
+      popMatrix();
+    }
   }
   
   // -----------------------------------------------------
