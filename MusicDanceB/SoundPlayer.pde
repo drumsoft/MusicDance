@@ -235,9 +235,10 @@ class SoundPlayer extends Bead {
         break;
     }
     
-    if (tension + (currentPart * 360) > 3600) { // 3650 .. 1800
-      if (tensionClass < soundMap.length - 1) tensionClass++;
-    } else if (tension < 500) {
+    if (tension + (currentPart * 400) > (1500 + 5 * 400)) { // 3500, 3100, 2700, 2300, 1900, 1500
+      tensionClass++;
+      if (tensionClass >= soundMap.length) tensionClass = 0;
+    } else if (tension < 100) {
       if (tensionClass > 0) tensionClass--;
     }
     
