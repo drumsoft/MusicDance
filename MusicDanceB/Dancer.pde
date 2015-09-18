@@ -148,6 +148,28 @@ class Dancer {
   
   // -----------------------------------------------------
   
+  boolean active = false;
+  
+  boolean activate() {
+    if (!active) {
+      active = true;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  boolean deactivate() {
+    if (active) {
+      active = false;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  // -----------------------------------------------------
+  
   // cycle(seconds/beat)
   float getCycle() {
     return cycle;

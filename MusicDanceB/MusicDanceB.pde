@@ -214,13 +214,15 @@ void draw()
   
   // draw the skeleton if its available
   int[] userList = context.getUsers();
-  for(int i=0;i<userList.length;i++)
-  {
-    if(context.isTrackingSkeleton(userList[i])) {
-      Dancer dancer = getDancer(userList[i]);
-      
+  for(int i=0;i<userList.length;i++) {
+    int userId = userList[i];
+    if(context.isTrackingSkeleton(userId)) {
+      Dancer dancer = getDancer(userId);
+      if (dancer == null || !dancer.active) {
+        dancer = startBpmDetecting(userId);
+      }
       stroke(lerpColor(#818181, #ff0000, dancer.getStrictness()));
-      drawSkeleton(userList[i]);
+      drawSkeleton(userId);
       
       dancer.update(getTime());
       dancer.updateVisual();
@@ -241,7 +243,7 @@ void draw()
     
     // draw the center of mass
     /*
-    if(context.getCoM(userList[i],com))
+    if(context.getCoM(userId,com))
     {
       stroke(100,255,0);
       strokeWeight(1);
@@ -256,14 +258,14 @@ void draw()
         vertex(com.x,com.y,com.z + 15);
       endShape();
       
-      if (context.isTrackingSkeleton(userList[i])) {
+      if (context.isTrackingSkeleton(userId)) {
         pushMatrix();
-        // text(Integer.toString(userList[i]),com.x,com.y,com.z);
+        // text(Integer.toString(userId),com.x,com.y,com.z);
         translate(com.x, com.y, com.z);
         rotateX(rotX);
         textSize(96);
         fill(0,255,100);
-        text(Integer.toString( (int)(getBodyMoveDetector(userList[i]).getValue()) ), 0, 40, 0);
+        text(Integer.toString( (int)(getBodyMoveDetector(userId).getValue()) ), 0, 40, 0);
         popMatrix();
       }
     }
@@ -414,17 +416,12 @@ void onNewUser(SimpleOpenNI curContext,int userId)
 {
   println("onNewUser - userId: " + userId);
   context.startTrackingSkeleton(userId);
-  
-  startBpmDetecting(userId);
-  screenSaver.setPopulation(dancers.size());
 }
 
 void onLostUser(SimpleOpenNI curContext,int userId)
 {
   println("onLostUser - userId: " + userId);
-  
   stopBpmDetecting(userId);
-  screenSaver.setPopulation(dancers.size());
 }
 
 void onVisibleUser(SimpleOpenNI curContext,int userId)
@@ -480,11 +477,20 @@ void initMusicDanceSystem() {
   updateTime();
 }
 
-void startBpmDetecting(int userId) {
-  Dancer dancer = new Dancer(userId, context, this, getTime());
-  dancers.put(new Integer(userId), dancer);
-  dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
-  setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+int population = 0;
+
+Dancer startBpmDetecting(int userId) {
+  Dancer dancer = getDancer(userId);
+  if (dancer == null) {
+    dancer = new Dancer(userId, context, this, getTime());
+    dancers.put(new Integer(userId), dancer);
+    dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
+    setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+  }
+  if (dancer.activate()) {
+    screenSaver.setPopulation(++population);
+  }
+  return dancer;
 }
 
 Dancer getDancer(int userId) {
@@ -492,7 +498,10 @@ Dancer getDancer(int userId) {
 }
 
 void stopBpmDetecting(int userId) {
-  dancers.remove(new Integer(userId));
+  Dancer dancer = getDancer(userId);
+  if (dancer != null && dancer.deactivate()) {
+    screenSaver.setPopulation(--population);
+  }
 }
 
 // キー入力のハンドラ(ユーティリティ的な)
