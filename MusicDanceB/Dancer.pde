@@ -26,7 +26,6 @@ class Dancer {
   float cycle;
   float previousBeatTime;
   float phase;
-  int strictScore;
   float strictness, givenWeight, givenWeightLife;
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
@@ -46,6 +45,7 @@ class Dancer {
     fRng = new MoveFilterRange(currentCycle, 60.0/190.0, 60.0/60.0); // startValue(cycle), min, max
     fMC = new MoveFilterMultipleCorrect(currentCycle, 1.5, 10); // startValue, threshold(current/previous), limit(samples)
     fAvg = new MoveFilterAverage(15, currentCycle); // samplesNumber, startValue
+    sc = new StrictnessCounter(strictScoreMin, strictScoreMax);
   }
   
   MoveFilterSpeed fSpeed;
@@ -54,6 +54,7 @@ class Dancer {
   MoveFilterRange fRng;
   MoveFilterMultipleCorrect fMC;
   MoveFilterAverage fAvg;
+  StrictnessCounter sc;
   
   void update(float currentTime) {
     PVector p = new PVector();
@@ -77,13 +78,9 @@ class Dancer {
       previousBeatTime = currentTime;
       phase = 0;
       
-      if (fRng.isValid() && fMC.isValid()) {
-        if (strictScore < strictScoreMax) strictScore++;
-      } else {
-        if (strictScore > strictScoreMin) strictScore--;
-      }
-      strictness = (float)strictScore / strictScoreMax;
-      strictness = strictness * strictness;
+      sc.input(fRng.isValid());
+      sc.input(fMC.isValid());
+      strictness = sc.update();
       
       sound.kick();
       
