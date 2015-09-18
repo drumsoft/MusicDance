@@ -6,7 +6,6 @@ class BodyMoveDetector extends MoveDetector {
   MoveFilterLPF[] fLPFs;
 
   float th_confidence = 0.3;
-  float result_max_variance = 1; // 1フレームに結果が変化できる最大の量
   
   BodyMoveDetector(int uid, SimpleOpenNI c, MusicDanceB a_controller, float time) {
     super(uid, c, a_controller);
@@ -26,6 +25,7 @@ class BodyMoveDetector extends MoveDetector {
   void updateWithTime(float time) {
     float maxSpeed = 0;
     float timeElapsed = time - previousTime;
+    if (timeElapsed == 0) return;
     for (int i = 0; i < moveParts.length; i++) {
       float speed = fLPFs[i].input(movePartDistance2(i, moveParts[i][0], moveParts[i][1]) / timeElapsed, time);
       if (maxSpeed < speed) {

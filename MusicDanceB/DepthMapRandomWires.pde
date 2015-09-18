@@ -38,7 +38,7 @@ class DepthMapRandomWires extends DepthMapVisualizer {
         Dancer dancer = _main.getDancer(user);
         if (dancer != null) {
           stroke(dancer.getUserColor());
-          strokeWeight(Math.max(Math.min(8, (dancer.getBodyMove()-80) / 30), 2));
+          strokeWeight(dancer.strokeWeight(228, 428, 2, 8));
         } else {
           stroke(userClr[user % userClr.length]);
           strokeWeight(3);

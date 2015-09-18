@@ -21,7 +21,7 @@ class DepthMapPointCloud extends DepthMapVisualizer {
             if (dancer != null) {
               fill(dancer.getUserColor());
               realWorldPoint = dancer.movePoint(realWorldPoint);
-              radiusPlus = Math.max(Math.min(20, (dancer.getBodyMove()-100) / 10), 0);
+              radiusPlus = dancer.strokeWeight(357, 143, 0, 20);
             } else {
               fill(userClr[userMap[index] % userClr.length]);
               radiusPlus = 10;

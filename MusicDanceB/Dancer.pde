@@ -205,6 +205,11 @@ class Dancer {
     return handsUpMoveDetector.getValue();
   }
   
+  // 0に設定する値, 1に設定する幅, 設定可能な最小値, 設定可能な最大値
+  float strokeWeight(float base, float unit, float min, float max) {
+    return Math.max(Math.min( (bodyMoveDetector.getValue()-base)/unit , max), min);
+  }
+  
   // -----------------------------------------------------
   
   void drawHeart() {

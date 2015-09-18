@@ -94,7 +94,7 @@ class DepthMapContours extends DepthMapVisualizer {
               Dancer dancer = _main.getDancer(user);
               if (dancer != null) {
                 stroke(dancer.getUserColor());
-                strokeWeight(Math.max(Math.min(7, (dancer.getBodyMove()-50) / 30), 1));
+                strokeWeight(dancer.strokeWeight(89, 332, 1, 7));
               } else {
                 stroke(userClr[user % userClr.length]);
                 strokeWeight(3);
