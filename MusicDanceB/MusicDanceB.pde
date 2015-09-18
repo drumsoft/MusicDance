@@ -469,6 +469,7 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 // -----------------------------------------
 
 int [][] armsDetectionParts;
+int [][] bodyMoveDetectionParts;
 HashMap<Integer, Dancer> dancers;
 HashMap<Integer, HandsUpMoveDetector> handsUpDetectors;
 HashMap<Integer, BodyMoveDetector> bodyMoveDetectors;
@@ -494,6 +495,12 @@ void initMusicDanceSystem() {
   armsDetectionParts[3][0] = SimpleOpenNI.SKEL_RIGHT_ELBOW;
   armsDetectionParts[3][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
   
+  bodyMoveDetectionParts = new int[2][2];
+  bodyMoveDetectionParts[0][0] = SimpleOpenNI.SKEL_NECK;
+  bodyMoveDetectionParts[0][1] = SimpleOpenNI.SKEL_RIGHT_HAND;
+  bodyMoveDetectionParts[1][0] = SimpleOpenNI.SKEL_NECK;
+  bodyMoveDetectionParts[1][1] = SimpleOpenNI.SKEL_LEFT_HAND;
+  
   dancers = new HashMap<Integer, Dancer>();
   handsUpDetectors = new HashMap<Integer, HandsUpMoveDetector>();
   bodyMoveDetectors = new HashMap<Integer, BodyMoveDetector>();
@@ -512,7 +519,7 @@ void startBpmDetecting(int userId) {
   handsUpDetectors.put(new Integer(userId), hmDetector);
   
   BodyMoveDetector bmDetector = new BodyMoveDetector(userId, context, this, getTime());
-  bmDetector.setMoveParts(armsDetectionParts);
+  bmDetector.setMoveParts(bodyMoveDetectionParts);
   bodyMoveDetectors.put(new Integer(userId), bmDetector);
 }
 

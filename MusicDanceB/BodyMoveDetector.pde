@@ -3,6 +3,8 @@ import SimpleOpenNI.*;
 class BodyMoveDetector extends MoveDetector {
   float previousTime;
   PVector[] previousVector;
+  MoveFilterLPF[] fLPFs;
+
   float th_confidence = 0.3;
   float result_max_variance = 1; // 1フレームに結果が変化できる最大の量
   
@@ -14,25 +16,29 @@ class BodyMoveDetector extends MoveDetector {
   void setMoveParts(int[][] parts) {
     super.setMoveParts(parts);
     previousVector = new PVector[moveParts.length];
+    fLPFs = new MoveFilterLPF[moveParts.length];
+    for (int i = 0; i < moveParts.length; i++) {
+      fLPFs[i] = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
+    }
   }
   
   // 更新 - 最高の相対速度を全体の相対速度にする
   void updateWithTime(float time) {
     float maxSpeed = 0;
+    float timeElapsed = time - previousTime;
     for (int i = 0; i < moveParts.length; i++) {
-      float speed = movePartDistance2(i, moveParts[i][0], moveParts[i][1]);
+      float speed = fLPFs[i].input(movePartDistance2(i, moveParts[i][0], moveParts[i][1]) / timeElapsed, time);
       if (maxSpeed < speed) {
         maxSpeed = speed;
       }
     }
-    float resultSpeed = (float)Math.sqrt(maxSpeed) / (time - previousTime);
-    resultValue = Math.max(Math.min(resultSpeed, resultValue + result_max_variance), resultValue - result_max_variance);
+    resultValue = maxSpeed;
     previousTime = time;
   }
   
   // -----------------------------------------------------
   
-  // パーツ元からパーツ先の、相対移動量の2乗
+  // パーツ元からパーツ先の、相対移動量
   float movePartDistance2(int i, int partA, int partB) {
     PVector pa = new PVector();
     PVector pb = new PVector();
