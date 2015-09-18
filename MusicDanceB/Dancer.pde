@@ -7,7 +7,6 @@ class Dancer {
   static final int strictScoreMin = 0;
   static final int givenWeightTTL = 150;
   
-  int pickupPosition = SimpleOpenNI.SKEL_NECK;
   /*
     頭    SKEL_HEAD -> 首
     首    SKEL_NECK -> 頭,両肩
@@ -47,12 +46,16 @@ class Dancer {
     float currentCycle = 60 / sound.currentBPM;
     center = new PVector();
     
-    fSpeed = new MoveFilterSpeed(currentTime); // startValue, currentTime
-    fLPF = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
+    fSpeedNeck = new MoveFilterSpeed(currentTime); // startValue, currentTime
+    fSpeedTrio = new MoveFilterSpeed(currentTime); // startValue, currentTime
+    fLPFNeck = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
+    fLPFTrio = new MoveFilterLPF(3.8, 1, 28); // cutoff(hz), Q, samplingrate(hz)
+    fLPFNeckPosition = new MoveFilterLPF(3.8, 1, 28);
     cf = new CycleFounderThreshold(25, -36, currentTime); // upperTh(speed), lowerTh, currentTime
     fRng = new MoveFilterRange(currentCycle, 60.0/190.0, 60.0/60.0); // startValue(cycle), min, max
     fMC = new MoveFilterMultipleCorrect(currentCycle, 1.5, 10); // startValue, threshold(current/previous), limit(samples)
     fAvg = new MoveFilterAverage(15, currentCycle); // samplesNumber, startValue
+    fNeckAmp = new MoveFilterMeasureAmp(120, 0);
     sc = new StrictnessCounter(strictScoreMin, strictScoreMax);
     
     for (int i = 0; i < heartOffsets; i++) {
@@ -63,20 +66,33 @@ class Dancer {
     }
   }
   
-  MoveFilterSpeed fSpeed;
-  MoveFilterLPF fLPF;
+  MoveFilterSpeed fSpeedNeck, fSpeedTrio;
+  MoveFilterLPF fLPFNeck, fLPFTrio, fLPFNeckPosition;
+  MoveFilterMeasureAmp fNeckAmp;
   CycleFounder cf;
   MoveFilterRange fRng;
   MoveFilterMultipleCorrect fMC;
   MoveFilterAverage fAvg;
   StrictnessCounter sc;
   
+  PVector p1 = new PVector(), p2 = new PVector(), p3 = new PVector();
+  
   void update(float currentTime) {
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_HEAD, center);
     
-    PVector p = new PVector();
-    context.getJointPositionSkeleton(userId, pickupPosition, p);
-    float speed = -fLPF.input(fSpeed.input(p.y, currentTime), currentTime);
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p1);
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_LEFT_HAND, p2);
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_RIGHT_HAND, p3);
+    float trio = (p1.y + p2.y + p3.y) / 3;
+    
+    float speedNeck = -fLPFNeck.input(fSpeedNeck.input(p1.y, currentTime), currentTime);
+    float speedTrio = -fLPFTrio.input(fSpeedTrio.input(trio, currentTime), currentTime);
+    float neckAmp = fNeckAmp.input(fLPFNeckPosition.input(p1.y, currentTime), currentTime);
+    float neckRatio = (neckAmp - 10) / 40; // [10.0, 50.0] -> [0, 1]
+    if (neckRatio < 0) neckRatio = 0;
+    if (neckRatio > 1) neckRatio = 1;
+    float speed = speedNeck * neckRatio + speedTrio * (1 - neckRatio);
+    
     boolean isUpdated = cf.input(speed, currentTime);
     cycle = fMC.input(fRng.input(cf.value(), currentTime), currentTime);
     fAvg.input(cycle, currentTime);
