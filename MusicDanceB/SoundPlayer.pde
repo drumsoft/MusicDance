@@ -20,7 +20,6 @@ class SoundPlayer extends Bead {
   float currentBPM;
   float currentTime;
   float startTime, endTime, startBpm, endBpm;
-  float previousTapEvent;
   
   String ambientSoundFile = "m0-all.wav";
   String[] soundFiles = { // サウンドファイルの一覧
@@ -115,6 +114,7 @@ class SoundPlayer extends Bead {
     for (int i = 0; i < numberOfSongs; i++) {
       isPlayed[i] = false;
     }
+    tensionClass = 0;
   }
 
   // (weighted averaged bpm, phase by topDancer, strictness by topDancer)
@@ -235,9 +235,9 @@ class SoundPlayer extends Bead {
         break;
     }
     
-    if (tension > 210) {
+    if (tension + (currentPart * 20) > 260) { // 260, 240, 220, 200, 180, 160
       if (tensionClass < soundMap.length - 1) tensionClass++;
-    } else if (tension < 80) {
+    } else if (tension < 50) {
       if (tensionClass > 0) tensionClass--;
     }
     
