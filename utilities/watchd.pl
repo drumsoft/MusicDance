@@ -15,6 +15,8 @@ my $HIDE = 4;
 
 my $self_pid_file = 'watchd.pid';
 
+my $my_log_file = '/Users/nnp/Library/Logs/MusicDance.log';
+
 my %operation_by_appnames = (
   'java' => $NOOP,
   'Finder' => $NOOP,
@@ -44,6 +46,7 @@ ExclusiveLaunch::launch($self_pid_file, \&main);
 # -------------------------------
 
 sub main {
+  logrotate($my_log_file);
   while (1) {
     if (!is_key_injected()) {
       operate_apps();
@@ -59,6 +62,18 @@ sub main {
 }
 
 # -------------------------------
+
+sub logrotate {
+  my $from = shift;
+  if (! -e $from) {
+    report("logrotate failed (file not found).");
+    return;
+  }
+  my ($s, $m, $h, $d, $mo, $y) = localtime(time());
+  my $to = $from;
+  $to =~ s/\.(\w+)$/sprintf "%04d%02d%02d-%02d%02d%02d.$1", $y+1900, $mo+1, $d, $h, $m, $s/e;
+  rename $from, $to;
+}
 
 sub javaapp_launch {
   local $/ = undef;
