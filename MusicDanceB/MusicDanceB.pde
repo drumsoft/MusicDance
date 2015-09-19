@@ -460,8 +460,10 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 // -----------------------------------------
 
 HashMap<Integer, Dancer> dancers;
+LinkedList<Dancer> dancersPool;
 long systemStartedTime;
 float systemCurrentTime;
+int population = 0;
 
 void updateTime() {
   systemCurrentTime = (float)(System.currentTimeMillis() - systemStartedTime) / 1000;
@@ -473,21 +475,27 @@ float getTime() {
 
 void initMusicDanceSystem() {
   dancers = new HashMap<Integer, Dancer>();
+  dancersPool = new LinkedList<Dancer>();
   systemStartedTime = System.currentTimeMillis();
   updateTime();
 }
 
-int population = 0;
-
 Dancer startBpmDetecting(int userId) {
   Dancer dancer = getDancer(userId);
   if (dancer == null) {
-    dancer = new Dancer(userId, context, this, getTime());
-    dancers.put(new Integer(userId), dancer);
-    dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
-    setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+    PVector com = new PVector();
+    context.getCoM(userId, com);
+    dancer = fetchDancerFromPool(com);
+    if (dancer != null) {
+      dancers.put(new Integer(userId), dancer);
+    } else {
+      dancer = new Dancer(userId, context, this, getTime());
+      dancers.put(new Integer(userId), dancer);
+      dancer.initVisual(userClr[ (userId - 1) % userClr.length ]);
+      setupGraph(userId, uiDisplayTop + uiDisplayHeight * (userId + 1) / 6);
+    }
   }
-  if (dancer.activate()) {
+  if (dancer.activate(userId)) {
     screenSaver.setPopulation(++population);
   }
   return dancer;
@@ -499,9 +507,39 @@ Dancer getDancer(int userId) {
 
 void stopBpmDetecting(int userId) {
   Dancer dancer = getDancer(userId);
-  if (dancer != null && dancer.deactivate()) {
-    screenSaver.setPopulation(--population);
+  if (dancer != null) {
+    dancers.remove(new Integer(userId));
+    poolDancer(dancer);
+    if (dancer.deactivate()) {
+      screenSaver.setPopulation(--population);
+    }
   }
+}
+
+void poolDancer(Dancer dancer) {
+  dancersPool.push(dancer);
+  println("Pool pushed:" + dancersPool.size());
+}
+
+Dancer fetchDancerFromPool(PVector com) {
+  ListIterator<Dancer> itr = dancersPool.listIterator(0);
+  if (!itr.hasNext()) return null;
+  int    minIndex    = itr.nextIndex();
+  Dancer minDancer   = itr.next();
+  float  minDistance = com.dist(minDancer.com);
+  while (itr.hasNext()) {
+    int    index  = itr.nextIndex();
+    Dancer dancer = itr.next();
+    float distance = com.dist(dancer.com);
+    if (minDistance > distance) {
+      minDistance = distance;
+      minDancer = dancer;
+      minIndex = index;
+    }
+  }
+  dancersPool.remove(minIndex);
+  println("Pool fetched from:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
+  return minDancer;
 }
 
 // キー入力のハンドラ(ユーティリティ的な)

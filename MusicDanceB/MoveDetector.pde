@@ -25,4 +25,8 @@ class MoveDetector {
   float getValue() {
     return resultValue;
   }
+  
+  void changeUserId(int userId) {
+    this.userId = userId;
+  }
 }

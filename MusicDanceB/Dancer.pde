@@ -36,7 +36,8 @@ class Dancer {
   float previousBeatTime;
   float phase;
   float strictness, givenWeight, givenWeightLife;
-  PVector center;
+  PVector head;
+  PVector com;
   
   static final int heartOffsets = 9;
   float[] heartRadians = new float[heartOffsets];
@@ -46,6 +47,7 @@ class Dancer {
   
   HandsUpMoveDetector handsUpMoveDetector;
   BodyMoveDetector bodyMoveDetector;
+  
   
   Dancer(int userId, SimpleOpenNI context, MusicDanceB controller, float currentTime) {
     this.userId = userId;
@@ -57,7 +59,8 @@ class Dancer {
     givenWeight = 0;
     givenWeightLife = 0;
     float currentCycle = 60 / sound.currentBPM;
-    center = new PVector();
+    head = new PVector();
+    com = new PVector();
     
     fSpeedNeck = new MoveFilterSpeed(currentTime); // startValue, currentTime
     fSpeedTrio = new MoveFilterSpeed(currentTime); // startValue, currentTime
@@ -97,7 +100,8 @@ class Dancer {
   PVector p1 = new PVector(), p2 = new PVector(), p3 = new PVector();
   
   void update(float currentTime) {
-    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_HEAD, center);
+    context.getCoM(userId, com);
+    context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_HEAD, head);
     
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_NECK, p1);
     context.getJointPositionSkeleton(userId, SimpleOpenNI.SKEL_LEFT_HAND, p2);
@@ -150,8 +154,14 @@ class Dancer {
   
   boolean active = false;
   
-  boolean activate() {
+  boolean activate(int userId) {
     if (!active) {
+      if (this.userId != userId) {
+        println("Dancer " + this.userId + " will activated as " + userId);
+        this.userId = userId;
+        handsUpMoveDetector.changeUserId(userId);
+        bodyMoveDetector.changeUserId(userId);
+      }
       active = true;
       return true;
     } else {
@@ -226,9 +236,9 @@ class Dancer {
       for (int i = 0; i < count; i++) {
         float phase_ = phase + 2.0 * (float)Math.PI * ((float)i / count) + heartRadians[i % heartOffsets];
         float radius_ = radius + heartRadius[i % heartOffsets];
-        float x = center.x + radius_ * (float)Math.cos(phase_);
-        float y = center.y + 30 * (float)Math.sin(phase_ + heartZ[i % heartOffsets]);
-        float z = center.z + radius_ * (float)Math.sin(phase_);
+        float x = head.x + radius_ * (float)Math.cos(phase_);
+        float y = head.y + 30 * (float)Math.sin(phase_ + heartZ[i % heartOffsets]);
+        float z = head.z + radius_ * (float)Math.sin(phase_);
         float r = heartSize[i % heartOffsets];
         pushMatrix();
         translate(x, y, z);
