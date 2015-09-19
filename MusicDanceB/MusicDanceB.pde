@@ -537,6 +537,10 @@ Dancer fetchDancerFromPool(PVector com) {
       minIndex = index;
     }
   }
+  if (minDistance > 1000) {
+    println("Pool found but too distanced:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
+    return null;
+  }
   dancersPool.remove(minIndex);
   if (minDancer.timeDeactivated < getTime() - 30) {
     println("Pool found but expired:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
