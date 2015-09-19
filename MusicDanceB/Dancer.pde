@@ -212,10 +212,13 @@ class Dancer {
   
   // -----------------------------------------------------
   
+  int heartPhaseCounter = 0;
+  
   void drawHeart() {
     if (givenWeightLife > 0 && givenWeight >= 0.5) {
+      heartPhaseCounter++;
       int count = (int)Math.floor(2 * givenWeight);
-      float phase = 2.0 * (float)Math.PI * 0.25 * givenWeightLife / (28 * cycle);
+      float phase = 2.0 * (float)Math.PI * 0.25 * heartPhaseCounter / (28 * cycle);
       float radius = 150 + givenWeight * 20;
       pushMatrix();
       noStroke();
@@ -233,6 +236,8 @@ class Dancer {
         popMatrix();
       }
       popMatrix();
+    } else {
+      heartPhaseCounter = 0;
     }
   }
   
