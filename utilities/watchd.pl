@@ -46,7 +46,7 @@ ExclusiveLaunch::launch($self_pid_file, \&main);
 # -------------------------------
 
 sub main {
-  logrotate($my_log_file);
+  $my_log_file = logrotate($my_log_file);
   while (1) {
     if (!is_key_injected()) {
       operate_apps();
@@ -67,12 +67,13 @@ sub logrotate {
   my $from = shift;
   if (! -e $from) {
     report("logrotate failed (file not found).");
-    return;
+    return $from;
   }
   my ($s, $m, $h, $d, $mo, $y) = localtime(time());
   my $to = $from;
   $to =~ s/\.(\w+)$/sprintf "%04d%02d%02d-%02d%02d%02d.$1", $y+1900, $mo+1, $d, $h, $m, $s/e;
   rename $from, $to;
+  return $to;
 }
 
 sub javaapp_launch {
@@ -87,6 +88,12 @@ sub javaapp_launch {
     my $launched = 0 < (grep { /$process->{search}/ } @ps);
     if ($launched && dir_updated_date($process->{dir}) > get_file_updated_date($process->{datefile})) {
       report('kill java (to relaunch):', $name);
+      system('killall java');
+      $launched = 0;
+    }
+    my $last_log = get_file_updated_date($my_log_file);
+    if ($last_log && $last_log < time() - 30) {
+      report('kill java (freezed?):', $name);
       system('killall java');
       $launched = 0;
     }
