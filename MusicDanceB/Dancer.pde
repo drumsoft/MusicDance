@@ -153,6 +153,7 @@ class Dancer {
   // -----------------------------------------------------
   
   boolean active = false;
+  float timeDeactivated = 0;
   
   boolean activate(int userId) {
     if (!active) {
@@ -171,6 +172,7 @@ class Dancer {
   
   boolean deactivate() {
     if (active) {
+      timeDeactivated = getTime();
       active = false;
       return true;
     } else {

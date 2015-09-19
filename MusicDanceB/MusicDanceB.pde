@@ -538,8 +538,13 @@ Dancer fetchDancerFromPool(PVector com) {
     }
   }
   dancersPool.remove(minIndex);
-  println("Pool fetched from:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
-  return minDancer;
+  if (minDancer.timeDeactivated < getTime() - 30) {
+    println("Pool found but expired:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
+    return null;
+  } else {
+    println("Pool fetched from:" + minIndex + " distance:" + minDistance + " rest:" + dancersPool.size());
+    return minDancer;
+  }
 }
 
 // キー入力のハンドラ(ユーティリティ的な)
