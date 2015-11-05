@@ -30,6 +30,7 @@ SimpleOpenNI context;
 SoundPlayer sound;
 OscAgent osc;
 ScreenSaver screenSaver;
+Presentation presentation;
 
 float        zoomF =0.5f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
@@ -152,6 +153,13 @@ void setup()
   sound.start();
   
   screenSaver = new ScreenSaver();
+  
+  float pHeight = uiDisplayHeight * 1.0;
+  float pWidth = pHeight * 4 / 3;
+  presentation = new Presentation(
+    uiDisplayLeft + (uiDisplayWidth - pWidth) / 2, 
+    uiDisplayTop + (uiDisplayHeight - pHeight) / 2, 
+    pWidth, pHeight);
   
   noCursor();
   
@@ -282,9 +290,16 @@ void draw()
   // draw the kinect cam
   //context.drawCamFrustum();
   
+  camera();
+  hint(DISABLE_DEPTH_TEST);
+  
   drawGraphs();
   
   screenSaver.draw();
+  
+  hint(ENABLE_DEPTH_TEST);
+  
+  presentation.draw();
   
   osc.send(context);
   
@@ -553,27 +568,38 @@ Dancer fetchDancerFromPool(PVector com) {
 
 // キー入力のハンドラ(ユーティリティ的な)
 void keyPressed() {
-  switch(keyCode) {
-    case LEFT:
-      rotY += 0.1f;
-      break;
-    case RIGHT:
-      rotY -= 0.1f;
-      break;
-    case UP:
-      if(keyEvent.isShiftDown())
-        zoomF += 0.01f;
-      else
-        rotX += 0.1f;
-      break;
-    case DOWN:
-      if(keyEvent.isShiftDown()) {
-        zoomF -= 0.01f;
-        if(zoomF < 0.01) { zoomF = 0.01; }
-      } else {
-        rotX -= 0.1f;
-      }
-      break;
+  if (keyEvent.isControlDown()) {
+    switch(keyCode) {
+      case LEFT:
+        rotY += 0.1f;
+        break;
+      case RIGHT:
+        rotY -= 0.1f;
+        break;
+      case UP:
+        if(keyEvent.isShiftDown())
+          zoomF += 0.01f;
+        else
+          rotX += 0.1f;
+        break;
+      case DOWN:
+        if(keyEvent.isShiftDown()) {
+          zoomF -= 0.01f;
+          if(zoomF < 0.01) { zoomF = 0.01; }
+        } else {
+          rotX -= 0.1f;
+        }
+        break;
+    }
+  } else {
+    switch(keyCode) {
+      case LEFT:
+        presentation.prev();
+        break;
+      case RIGHT:
+        presentation.next();
+        break;
+    }
   }
 }
 void keyTyped() {
@@ -585,6 +611,9 @@ void keyTyped() {
     case 'm':
       context.setMirror(!context.mirror());
       println("mirror");
+      break;
+    case 'p':
+      presentation.toggle();
       break;
     default:
       println("key " + int(key) + " pushed");
@@ -606,8 +635,6 @@ void addDataToGraph(int userId, int series, float y) {
   getDancer(userId).graph.addValue(series, y);
 }
 void drawGraphs() {
-  camera();
-  hint(DISABLE_DEPTH_TEST);
   int[] userList = context.getUsers();
   for(int i=0;i<userList.length;i++) {
     if(context.isTrackingSkeleton(userList[i])) {
