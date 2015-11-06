@@ -1,3 +1,5 @@
+import processing.video.*;
+
 class Presentation {
   PresentationPage[] pages = new PresentationPage[]{
     new PresentationPageImage("slides01.png"),
@@ -7,7 +9,7 @@ class Presentation {
     new PresentationPageImage("slides05.png"),
     new PresentationPageImage("slides06.png"),
     new PresentationPageImage("slides07.png"),
-    new PresentationPageImage("slides08.png"),
+    new PresentationPageImageAndMovie("slides08.png", "musicDanceBeta.mp4", 440, 240, 520, 390),
     new PresentationPageImage("slides09.png"),
     new PresentationPageImage("slides10.png")
   };
@@ -19,10 +21,9 @@ class Presentation {
   PresentationPage prevImage, currentImage, nextImage;
   
   Presentation(float x, float y, float width, float height) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
+    for (int i = 0; i < pages.length; i++) {
+      pages[i].setSize(x, y, width, height);
+    }
     
     max = pages.length;
     cursor = 0;
@@ -34,7 +35,7 @@ class Presentation {
   void draw() {
     if (!isVisible) return;
     if (currentImage != null) {
-      currentImage.draw(x, y, width, height);
+      currentImage.draw();
     }
   }
   
@@ -64,43 +65,67 @@ class Presentation {
   void next() {
     if (!isVisible) return;
     if (cursor + 1 < max && nextImage.isLoaded()) {
+      currentImage.stop();
       cursor++;
       prepareImage(1);
+      currentImage.start();
     }
   }
   void prev() {
     if (!isVisible) return;
     if (cursor > 0 && prevImage.isLoaded()) {
+      currentImage.stop();
       cursor--;
       prepareImage(-1);
+      currentImage.start();
     }
   }
   
   void show() {
-    isVisible = true;
+    if (!isVisible) {
+      currentImage.start();
+      isVisible = true;
+    }
   }
   void hide() {
-    isVisible = false;
+    if (isVisible) {
+      currentImage.stop();
+      isVisible = false;
+    }
   }
   void toggle() {
-    isVisible = !isVisible;
+    if (isVisible) {
+      hide();
+    } else {
+      show();
+    }
   }
   
   // ------------------------------------
   abstract class PresentationPage {
+    float x, y, width, height;
     String type;
-    String filename;
     PresentationPage() {
+    }
+    void setSize(float x, float y, float width, float height) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
     }
     abstract void load();
     abstract void unload();
     abstract boolean isLoaded();
-    abstract void draw(float  x, float  y, float  width, float  height);
+    abstract void start();
+    abstract void stop();
+    abstract void draw();
   }
   
   class PresentationPageImage extends PresentationPage {
+    String filename;
     PImage img;
     PresentationPageImage(String filename) {
+      super();
       this.type = "Image";
       this.filename = filename;
     }
@@ -113,9 +138,56 @@ class Presentation {
     boolean isLoaded() {
       return img != null && img.width > 0;
     }
-    void draw(float x, float y, float width, float height) {
+    void start() {}
+    void stop() {}
+    void draw() {
       if (img != null && img.width > 0) {
         image(img, x, y, width, height);
+      }
+    }
+  }
+  
+  class PresentationPageImageAndMovie extends PresentationPageImage {
+    String movieName;
+    Movie movie;
+    float mx, my, mwidth, mheight;
+    float dx, dy, dwidth, dheight;
+    boolean sizeDecided = false;
+    PresentationPageImageAndMovie(String imageName, String movieName, float mx, float my, float mwidth, float mheight) {
+      super(imageName);
+      this.type = "ImageAndMovie";
+      this.movieName = movieName;
+      this.mx = mx; this.my = my; this.mwidth = mwidth; this.mheight = mheight;
+      
+      movie = new Movie(theApplet, movieName);
+      movie.stop();
+    }
+    void load() {
+      super.load();
+    }
+    void unload() {
+      super.unload();
+    }
+    boolean isLoaded() {
+      return super.isLoaded();
+    }
+    void start() {
+      movie.loop();
+    }
+    void stop() {
+      movie.pause();
+    }
+    void draw() {
+      super.draw();
+      if (movie != null && img.width > 0) {
+        if (!sizeDecided) {
+          dx = x + mx * width / img.width;
+          dy = y + my * height / img.height;
+          dwidth = mwidth * width / img.width;
+          dheight = mheight * height / img.height;
+          sizeDecided = true;
+        }
+        image(movie, dx, dy, dwidth, dheight);
       }
     }
   }

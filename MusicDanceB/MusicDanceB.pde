@@ -25,6 +25,7 @@ static final String pathToStoreMovie = "SkeletonRec.oni";
 static final int graph_series = 5;
 static final int[] graph_series_colors = {#7777FF,#dd7777,#FF00FF,#00FF00,#00FFFF,#FFFF00,#FFFFFF};
 
+PApplet theApplet;
 Preferences prefs;
 SimpleOpenNI context;
 SoundPlayer sound;
@@ -59,6 +60,7 @@ float frameCountStart = 0;
 
 void setup()
 {
+  theApplet = this;
   prefs = new Preferences();
   size(prefs.getInt("screenWidth"), prefs.getInt("screenHeight"), P3D);
   
@@ -641,6 +643,12 @@ void drawGraphs() {
       getDancer(userList[i]).graph.draw();
     }
   }
+}
+
+// ---- Movie
+
+void movieEvent(Movie m) {
+  m.read();
 }
 
 // ----------------------
